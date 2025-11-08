@@ -71,15 +71,36 @@ class IndicBERTProcessor:
     def _initialize_model(self):
         """Initialize IndicBERT model"""
         try:
+            import os
             logger.info("🧠 Loading IndicBERT for Indian language understanding...")
-            self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-            self.model = AutoModel.from_pretrained(self.model_name)
+            
+            # Get HuggingFace token from environment
+            hf_token = os.getenv("HUGGINGFACE_TOKEN")
+            
+            if hf_token:
+                logger.info("✅ Using HuggingFace authentication token")
+                # Load with authentication
+                self.tokenizer = AutoTokenizer.from_pretrained(
+                    self.model_name,
+                    use_auth_token=hf_token
+                )
+                self.model = AutoModel.from_pretrained(
+                    self.model_name,
+                    use_auth_token=hf_token
+                )
+            else:
+                logger.warning("⚠️ No HuggingFace token found. Trying without authentication...")
+                # Try to load without authentication (will fail for gated models)
+                self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+                self.model = AutoModel.from_pretrained(self.model_name)
+            
             self.model.to(self.device)
             self.model.eval()
             logger.info("✅ IndicBERT loaded successfully")
         except Exception as e:
-            logger.error(f"❌ Failed to load IndicBERT: {e}")
-            logger.info("📥 Downloading IndicBERT model (this may take a few minutes)...")
+            logger.warning(f"⚠️ IndicBERT not available (Authentication): {e}")
+            logger.info("🔄 Using fallback text analysis instead...")
+            logger.info("💡 To fix: Set HUGGINGFACE_TOKEN in .env file and request access at https://huggingface.co/ai4bharat/indic-bert")
             # Fallback to basic model
             self.tokenizer = None
             self.model = None

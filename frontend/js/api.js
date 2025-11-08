@@ -26,9 +26,9 @@ class APIClient {
   detectBaseURL() {
     const { protocol, hostname, port } = window.location;
     
-    // In development, assume backend runs on port 8000
+    // In development, assume backend runs on port 8080
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return `${protocol}//${hostname}:8000`;
+      return `${protocol}//${hostname}:8080`;
     }
     
     // In production, assume same origin

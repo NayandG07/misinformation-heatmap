@@ -1,13 +1,18 @@
-/* CSS Custom Properties for theming */
+/* Premium India Misinformation Heatmap - Modern UI/UX Design */
 :root {
-  /* Colors */
-  --primary-color: #2563eb;
-  --primary-hover: #1d4ed8;
-  --secondary-color: #64748b;
-  --success-color: #059669;
-  --warning-color: #d97706;
-  --error-color: #dc2626;
-  --info-color: #0891b2;
+  /* Premium Gradients */
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --gradient-success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  
+  /* Vibrant Colors */
+  --primary-color: #667eea;
+  --primary-hover: #8b9df3;
+  --secondary-color: #764ba2;
+  --success-color: #00f2fe;
+  --warning-color: #fee140;
+  --error-color: #ff6b6b;
+  --info-color: #4facfe;
   
   /* Background colors */
   --bg-primary: #ffffff;
@@ -111,8 +116,31 @@ body {
   font-size: var(--font-size-base);
   line-height: 1.6;
   color: var(--text-primary);
-  background-color: var(--bg-primary);
+  background: var(--gradient-primary);
+  background-attachment: fixed;
   overflow-x: hidden;
+  position: relative;
+}
+
+/* Animated Background */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, #667eea, #764ba2, #f5576c, #667eea);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+  z-index: -1;
+  opacity: 0.9;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* Accessibility */
@@ -157,17 +185,35 @@ select:focus {
   }
 }
 
-/* Header */
+/* Header - Glassmorphism Style */
 .header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   height: var(--header-height);
-  background-color: var(--bg-primary);
-  border-bottom: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
   z-index: 1000;
+}
+
+.header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-primary);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 
 .header-container {
@@ -191,15 +237,32 @@ select:focus {
 }
 
 .title-main {
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-  color: var(--text-primary);
+  font-size: 1.75rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--text-inverse) 0%, rgba(255, 255, 255, 0.8) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+  animation: fadeInDown 0.6s ease-out;
 }
 
 .title-subtitle {
-  font-size: var(--font-size-sm);
-  font-weight: 400;
-  color: var(--text-secondary);
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  animation: fadeInDown 0.6s ease-out 0.1s backwards;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .header-right {
@@ -213,17 +276,38 @@ select:focus {
   align-items: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
-  background-color: var(--bg-secondary);
-  border-radius: var(--border-radius);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   font-size: var(--font-size-sm);
+  transition: all var(--transition-normal);
+}
+
+.status-indicator:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.05);
 }
 
 .status-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background-color: var(--warning-color);
+  box-shadow: 0 0 10px currentColor;
+  animation: pulse 2s ease-in-out infinite;
   transition: background-color var(--transition-fast);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(0.9);
+  }
 }
 
 .status-dot.connected {
@@ -232,6 +316,12 @@ select:focus {
 
 .status-dot.error {
   background-color: var(--error-color);
+  animation: none;
+}
+
+.status-text {
+  color: var(--text-inverse);
+  font-weight: 600;
 }
 
 .header-btn {
@@ -240,18 +330,48 @@ select:focus {
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: none;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--border-radius-lg);
+  color: var(--text-inverse);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.header-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width var(--transition-normal), height var(--transition-normal);
+}
+
+.header-btn:hover::before {
+  width: 100%;
+  height: 100%;
 }
 
 .header-btn:hover {
-  background-color: var(--bg-secondary);
-  border-color: var(--border-hover);
-  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.header-btn:active {
+  transform: translateY(0) scale(0.95);
+}
+
+.header-btn svg {
+  position: relative;
+  z-index: 1;
 }
 
 /* Main content */
@@ -270,6 +390,18 @@ select:focus {
   flex-direction: column;
   overflow: hidden;
   transition: transform var(--transition-normal);
+  animation: slideInLeft 0.6s ease-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .control-panel-header {
@@ -277,8 +409,9 @@ select:focus {
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-lg);
-  border-bottom: 1px solid var(--border-color);
-  background-color: var(--bg-primary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
 }
 
 .control-panel-title {
