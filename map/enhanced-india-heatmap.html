@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced India Fake News Heatmap</title>
+    <title>Misinformation Heatmap | India</title>
     <style>
         :root {
             --bg: #0f1720;
@@ -12,34 +12,165 @@
             --high-risk: #dc3545;
             --medium-risk: #ffc107;
             --low-risk: #28a745;
+            --text-primary: #e6eef8;
+            --text-secondary: rgba(230, 238, 248, 0.7);
+            --border: rgba(255,255,255,0.1);
+            --card-bg: rgba(255,255,255,0.05);
+        }
+        
+        [data-theme="light"] {
+            --bg: #f5f7fa;
+            --panel: #ffffff;
+            --accent: #3b82f6;
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --border: rgba(0,0,0,0.1);
+            --card-bg: rgba(0,0,0,0.03);
         }
         
         body {
             margin: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--bg);
-            color: #e6eef8;
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
             display: flex;
-            min-height: 100vh;
+            flex-direction: column;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+        
+        header {
+            padding: 9px 13px;
+            background: linear-gradient(90deg, var(--card-bg), transparent);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+            flex-shrink: 0;
+        }
+        
+        .ping-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 10px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .ping-value {
+            color: var(--accent);
+            font-weight: 600;
+        }
+        
+        .network-bars {
+            display: flex;
+            gap: 2px;
+            align-items: flex-end;
+            height: 14px;
+        }
+        
+        .network-bar {
+            width: 3px;
+            background: currentColor;
+            border-radius: 1.5px;
+            transition: all 0.3s ease;
+        }
+        
+        /* Base heights - will be dynamically adjusted */
+        .network-bar:nth-child(1) { height: 25%; }
+        .network-bar:nth-child(2) { height: 50%; }
+        .network-bar:nth-child(3) { height: 75%; }
+        .network-bar:nth-child(4) { height: 100%; }
+        
+        /* Dynamic signal strength classes */
+        .signal-weak .network-bar:nth-child(1) { opacity: 1; }
+        .signal-weak .network-bar:nth-child(2) { opacity: 0.3; }
+        .signal-weak .network-bar:nth-child(3) { opacity: 0.3; }
+        .signal-weak .network-bar:nth-child(4) { opacity: 0.3; }
+        
+        .signal-medium .network-bar:nth-child(1) { opacity: 1; }
+        .signal-medium .network-bar:nth-child(2) { opacity: 1; }
+        .signal-medium .network-bar:nth-child(3) { opacity: 0.3; }
+        .signal-medium .network-bar:nth-child(4) { opacity: 0.3; }
+        
+        .signal-good .network-bar:nth-child(1) { opacity: 1; }
+        .signal-good .network-bar:nth-child(2) { opacity: 1; }
+        .signal-good .network-bar:nth-child(3) { opacity: 1; }
+        .signal-good .network-bar:nth-child(4) { opacity: 0.3; }
+        
+        .signal-excellent .network-bar:nth-child(1) { opacity: 1; }
+        .signal-excellent .network-bar:nth-child(2) { opacity: 1; }
+        .signal-excellent .network-bar:nth-child(3) { opacity: 1; }
+        .signal-excellent .network-bar:nth-child(4) { opacity: 1; }
+        
+        .ping-excellent { color: #28a745; }
+        .ping-good { color: #ffc107; }
+        .ping-poor { color: #dc3545; }
+        
+        .theme-toggle {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent) 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+        
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+        }
+        
+        .theme-toggle:active {
+            transform: scale(0.95);
+        }
+        
+        .theme-toggle:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: -34px;
+            right: 0;
+            transform: none;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            white-space: nowrap;
+            z-index: 1000;
+            font-family: 'Segoe UI', sans-serif;
+            letter-spacing: 0.3px;
+        }
+        
+        #main-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.2);
         }
         
         #left {
             flex: 1;
             display: flex;
             flex-direction: column;
-        }
-        
-        header {
-            padding: 16px 20px;
-            background: linear-gradient(90deg, rgba(255,255,255,0.05), transparent);
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 9px 5px 9px 9px;
         }
         
         header h1 {
-            font-size: 24px;
+            font-size: 18px;
             margin: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
@@ -48,13 +179,15 @@
         }
         
         .status-bar {
-            padding: 12px 20px;
-            background: rgba(255,255,255,0.02);
+            padding: 9px 13px;
+            background: var(--card-bg);
             display: flex;
-            gap: 20px;
+            gap: 16px;
             align-items: center;
-            font-size: 14px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 12px;
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+            border-radius: 12px 12px 0 0;
         }
         
         .status-item {
@@ -77,10 +210,23 @@
             100% { opacity: 1; }
         }
         
+        .map-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--panel);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+        
         #mapwrap {
             flex: 1;
-            overflow: hidden;
             position: relative;
+            overflow: hidden;
+            background: transparent;
+            transition: background 0.3s ease;
         }
         
         #svgroot {
@@ -89,7 +235,19 @@
             touch-action: none;
             cursor: grab;
             background: linear-gradient(180deg, #071027, #082035);
-            transition: transform 0.2s ease;
+            position: relative;
+            transition: background 0.3s ease;
+            border-radius: 0 0 12px 12px;
+        }
+        
+        [data-theme="light"] #svgroot {
+            background: linear-gradient(180deg, #e6f0ff, #f0f4f8);
+        }
+        
+        #svgroot svg {
+            position: absolute;
+            top: 0;
+            left: 0;
         }
         
         #svgroot:active {
@@ -107,25 +265,34 @@
         }
         
         .zoom-btn {
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            border-radius: 6px;
+            width: 36px;
+            height: 36px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 10px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             transition: all 0.2s ease;
             backdrop-filter: blur(10px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        [data-theme="light"] .zoom-btn {
+            background: rgba(255,255,255,0.95);
+            border: 1px solid rgba(0,0,0,0.15);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
         
         .zoom-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: var(--accent);
+            color: white;
             transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
         }
         
         .zoom-btn:active {
@@ -133,23 +300,31 @@
         }
         
         .zoom-level {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
             padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 12px;
+            border-radius: 10px;
+            font-size: 11px;
             text-align: center;
             backdrop-filter: blur(10px);
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        [data-theme="light"] .zoom-level {
+            background: rgba(255,255,255,0.95);
+            border: 1px solid rgba(0,0,0,0.15);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
         
         #live-feed {
             scrollbar-width: thin;
-            scrollbar-color: rgba(255,255,255,0.3) transparent;
+            scrollbar-color: var(--accent) transparent;
         }
         
         #live-feed::-webkit-scrollbar {
-            width: 4px;
+            width: 3px;
         }
         
         #live-feed::-webkit-scrollbar-track {
@@ -157,12 +332,13 @@
         }
         
         #live-feed::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.3);
-            border-radius: 2px;
+            background: linear-gradient(180deg, var(--accent), #8b5cf6);
+            border-radius: 10px;
         }
         
         #live-feed::-webkit-scrollbar-thumb:hover {
-            background: rgba(255,255,255,0.5);
+            background: var(--accent);
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
         }
         
         @keyframes slideIn {
@@ -183,45 +359,201 @@
         
         #tooltip {
             position: absolute;
-            pointer-events: none;
-            padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255,255,255,0.98);
+            padding: 12px 14px;
             color: #041026;
-            border-radius: 8px;
-            font-size: 13px;
+            border-radius: 10px;
+            font-size: 12px;
             box-shadow: 0 8px 24px rgba(4,8,16,0.6);
             display: none;
             max-width: 300px;
             backdrop-filter: blur(10px);
+            pointer-events: none;
+            z-index: 10000;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        [data-theme="light"] #tooltip {
+            background: rgba(255,255,255,0.98);
+            color: #1a202c;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            border: 1px solid rgba(0,0,0,0.1);
         }
         
         aside {
-            width: 380px;
-            background: var(--panel);
-            border-left: 1px solid rgba(255,255,255,0.1);
-            padding: 20px;
+            width: 550px;
+            min-width: 300px;
+            max-width: 600px;
+            background: transparent;
+            border-left: none;
+            padding: 9px 9px 9px 5px;
             box-sizing: border-box;
+            position: relative;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) transparent;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        [data-theme="light"] aside {
+            background: transparent;
+        }
+        
+        .sidebar-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .sidebar-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .sidebar-content::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.2);
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-content::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+        }
+        
+        @media (max-width: 1400px) {
+            aside { width: 450px; }
+        }
+        
+        @media (max-width: 1200px) {
+            aside { width: 400px; font-size: 12px; }
+        }
+        
+        @media (max-width: 900px) {
+            aside { 
+                width: 100%; 
+                max-width: 100%; 
+                border-left: none; 
+                border-top: 1px solid var(--border);
+                padding: 9px;
+            }
+            #main-content { flex-direction: column; }
+            #left { padding: 9px; }
+        }
+        
+        /* Resizable divider */
+        .resizer {
+            position: absolute;
+            left: -3px;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            cursor: ew-resize;
+            background: transparent;
+            transition: background 0.2s ease;
+            z-index: 10;
+        }
+        
+        .resizer:hover {
+            background: rgba(59, 130, 246, 0.3);
+        }
+        
+        .sidebar-header {
+            display: none;
+        }
+        
+        .sidebar-tab {
+            padding: 8px 16px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .sidebar-tab.active {
+            background: var(--panel);
+            color: var(--accent);
+            font-weight: 600;
+        }
+        
+        .sidebar-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent);
+        }
+        
+        .sidebar-content {
+            flex: 1;
             overflow-y: auto;
+            padding: 20px;
+            background: var(--panel);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        [data-theme="light"] .sidebar-content {
+            background: #ffffff;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
         }
         
         .state-name {
-            font-size: 24px;
-            font-weight: 600;
+            font-size: 20px;
+            font-weight: 700;
             margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--accent) 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+        
+        [data-theme="light"] .state-name {
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .state-stats {
-            background: rgba(255,255,255,0.05);
-            padding: 16px;
-            border-radius: 8px;
-            margin: 16px 0;
+            background: var(--card-bg);
+            padding: 14px;
+            border-radius: 14px;
+            margin: 14px 0;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .state-stats:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2);
+            border-color: var(--accent);
+        }
+        
+        [data-theme="light"] .state-stats {
+            background: rgba(59, 130, 246, 0.04);
+            border: 1px solid rgba(59, 130, 246, 0.15);
+        }
+        
+        [data-theme="light"] .state-stats:hover {
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.15);
         }
         
         .stat-row {
             display: flex;
             justify-content: space-between;
-            margin: 8px 0;
-            font-size: 14px;
+            margin: 6px 0;
+            font-size: 12px;
         }
         
         .stat-value {
@@ -229,10 +561,13 @@
         }
         
         .risk-badge {
-            padding: 4px 8px;
+            padding: 4px 10px;
             border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .risk-high { background: var(--high-risk); color: white; }
@@ -258,39 +593,66 @@
         }
         
         .headline {
-            background: rgba(255,255,255,0.03);
+            background: var(--card-bg);
             padding: 12px;
-            border-radius: 6px;
+            border-radius: 10px;
             margin: 8px 0;
             border-left: 3px solid var(--accent);
             font-size: 13px;
             line-height: 1.4;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        
+        .headline:hover {
+            background: var(--card-bg);
+            border-color: var(--accent);
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
         }
         
         .legend {
-            margin-top: 20px;
-            padding: 16px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
+            margin-top: 16px;
+            padding: 14px;
+            background: var(--card-bg);
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .legend:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2);
+        }
+        
+        [data-theme="light"] .legend {
+            background: rgba(59, 130, 246, 0.04);
+            border: 1px solid rgba(59, 130, 246, 0.15);
+        }
+        
+        [data-theme="light"] .legend:hover {
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.15);
         }
         
         .legend h4 {
-            margin: 0 0 12px 0;
-            font-size: 16px;
+            margin: 0 0 8px 0;
+            font-size: 14px;
         }
         
         .legend-item {
             display: flex;
             align-items: center;
-            margin: 8px 0;
-            font-size: 13px;
+            margin: 6px 0;
+            font-size: 12px;
         }
         
         .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
-            margin-right: 10px;
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            margin-right: 8px;
         }
         
         /* Map styling */
@@ -311,6 +673,27 @@
             stroke: #ffffff;
             stroke-width: 2;
             filter: brightness(1.3);
+            animation: pulseState 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulseState {
+            0%, 100% { stroke-opacity: 1; }
+            50% { stroke-opacity: 0.7; }
+        }
+        
+        @keyframes slideInFromRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .state-content-animated {
+            animation: slideInFromRight 0.4s ease-out;
         }
         
         .loading {
@@ -324,40 +707,96 @@
             text-align: center;
             padding: 20px;
         }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .refreshing {
+            animation: spin 0.8s linear infinite;
+        }
+        
+        .refreshing-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(3px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeIn 0.2s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .refresh-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(59, 130, 246, 0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
     </style>
 </head>
 <body>
-    <div id="left">
-        <header>
-            <h1>🛡️ Enhanced India Fake News Heatmap</h1>
-            <div style="flex: 1;"></div>
-            <button onclick="debugMapData()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-right: 10px;">🐛 Debug</button>
-            <button onclick="forceRefresh()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-right: 10px;">🔄 Refresh</button>
-            <div style="font-size: 14px; opacity: 0.8;">
-                Real-time AI-powered fake news detection
-            </div>
-        </header>
+    <header>
+        <h1>🗺️ Misinformation Heatmap</h1>
+        <div style="flex: 1;"></div>
         
-        <div class="status-bar">
-            <div class="status-item">
-                <div class="status-dot"></div>
-                <span>Live Processing</span>
-            </div>
-            <div class="status-item">
-                <strong id="total-events">Loading...</strong> Total Events
-            </div>
-            <div class="status-item">
-                <strong id="active-states">Loading...</strong> Active States
-            </div>
-            <div class="status-item">
-                Last Update: <strong id="last-update">Loading...</strong>
-            </div>
-            <div class="status-item">
-                Accuracy: <strong id="classification-accuracy">Loading...</strong>
+        <!-- Ping Indicator -->
+        <div class="ping-indicator">
+            <span class="ping-value" id="ping-value">--</span>
+            <span style="opacity: 0.7;">ms</span>
+            <div class="network-bars" id="network-bars">
+                <div class="network-bar"></div>
+                <div class="network-bar"></div>
+                <div class="network-bar"></div>
+                <div class="network-bar"></div>
             </div>
         </div>
         
-        <div id="mapwrap">
+        <!-- Theme Toggle -->
+        <div class="theme-toggle" id="theme-toggle" data-tooltip="Switch to Light" onclick="toggleTheme()">
+            🌜
+        </div>
+    </header>
+    
+    <div id="main-content">
+        <div id="left">
+            <div class="map-card">
+                <div class="status-bar">
+                    <div class="status-item">
+                        <div class="status-dot"></div>
+                        <span>Live Processing</span>
+                    </div>
+                    <div class="status-item">
+                        <strong id="total-events">Loading...</strong> Total Events
+                    </div>
+                    <div class="status-item">
+                        <strong id="active-states">Loading...</strong> Active States
+                    </div>
+                    <div class="status-item">
+                        Last Update: <strong id="last-update">Loading...</strong>
+                    </div>
+                    <div class="status-item">
+                        Accuracy: <strong id="classification-accuracy">Loading...</strong>
+                    </div>
+                    <div style="flex: 1;"></div>
+                    <button onclick="forceRefresh()" style="background: var(--card-bg); border: 1px solid var(--border); color: var(--text-primary); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; transition: all 0.2s; display: flex; align-items: center; gap: 4px;" onmouseover="this.style.background='var(--accent)'; this.style.color='white'" onmouseout="this.style.background='var(--card-bg)'; this.style.color='var(--text-primary)'">
+                        🔄 <span>Refresh</span>
+                    </button>
+                </div>
+            
+            <div id="mapwrap">
             <div class="zoom-controls">
                 <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
                 <div class="zoom-level" id="zoom-level">100%</div>
@@ -372,62 +811,67 @@
             </div>
             <div id="tooltip"></div>
         </div>
+        </div><!-- Close map-card -->
     </div>
     
     <aside>
-        <div class="state-name" id="stateName">Select a State</div>
-        <div id="stateContent">
-            <div style="margin-top: 20px;">
-                <h4 style="font-size: 14px; margin-bottom: 10px; color: #667eea;">Risk Levels</h4>
-                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12px;">
+        <div class="resizer"></div>
+        <div class="sidebar-content">
+            <!-- Dynamic State Header -->
+            <div id="state-header" style="margin-bottom: 16px; position: relative;">
+                <button id="back-button" onclick="resetSidebar()" style="display: none; position: absolute; right: 0; top: 0; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: var(--accent); padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; transition: all 0.2s;"
+                        onmouseover="this.style.background='rgba(59, 130, 246, 0.2)'" 
+                        onmouseout="this.style.background='rgba(59, 130, 246, 0.1)'">
+                    ← Back
+                </button>
+                <div class="state-name" id="stateName" style="font-size: 18px; font-weight: 700; margin-bottom: 4px; background: linear-gradient(135deg, var(--accent) 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; padding-right: 70px;">
+                    Select a State
+                </div>
+                <div id="state-subtitle" style="font-size: 11px; opacity: 0.6;">
+                    Click on any state to view detailed analysis
+                </div>
+            </div>
+            
+            <!-- State Statistics (Hidden by default) -->
+            <div id="stateContent" style="display: none;">
+                <!-- Dynamically populated on state click -->
+            </div>
+            
+            <!-- Risk Legend (Always visible) -->
+            <div id="risk-legend" style="margin-bottom: 16px; padding: 12px; background: rgba(59, 130, 246, 0.05); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                <h4 style="font-size: 12px; margin-bottom: 10px; color: var(--accent); font-weight: 600;">📊 Risk Classification</h4>
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <div style="width: 16px; height: 16px; background: #dc3545; border-radius: 2px;"></div>
-                        <span>High Risk (≥60%)</span>
+                        <div style="width: 16px; height: 16px; background: #dc3545; border-radius: 3px;"></div>
+                        <span><strong>High Risk</strong> - Fake probability ≥60%</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <div style="width: 16px; height: 16px; background: #ffc107; border-radius: 2px;"></div>
-                        <span>Medium Risk (40-59%)</span>
+                        <div style="width: 16px; height: 16px; background: #ffc107; border-radius: 3px;"></div>
+                        <span><strong>Medium Risk</strong> - Fake probability 40-59%</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <div style="width: 16px; height: 16px; background: #28a745; border-radius: 2px;"></div>
-                        <span>Low Risk (<40%)</span>
+                        <div style="width: 16px; height: 16px; background: #28a745; border-radius: 3px;"></div>
+                        <span><strong>Low Risk</strong> - Fake probability <40%</span>
                     </div>
                 </div>
             </div>
             
-            <div style="text-align: center; opacity: 0.7; margin-top: 20px; font-size: 12px;">
-                Click on a state to view detailed fake news analysis
-            </div>
-            
-            <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
-                <h3 style="font-size: 16px; margin-bottom: 15px; color: #667eea; display: flex; align-items: center; gap: 8px;">
-                    <span style="width: 8px; height: 8px; background: #dc3545; border-radius: 50%; animation: pulse 2s infinite;"></span>
+            <!-- Live Classification Feed -->
+            <div id="live-feed-section" style="margin-top: 16px;">
+                <h3 style="font-size: 13px; margin-bottom: 10px; color: var(--accent); display: flex; align-items: center; gap: 6px; font-weight: 600;">
+                    <span style="width: 8px; height: 8px; background: #28a745; border-radius: 50%; animation: pulse 2s infinite;"></span>
                     Live Classification Feed
                 </h3>
-                <div id="live-feed" style="max-height: 300px; overflow-y: auto; font-size: 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; background: rgba(255,255,255,0.02);">
-                    <div style="opacity: 0.7; text-align: center; padding: 20px;">
-                        Loading live events...
+                <div id="live-feed" style="max-height: 400px; overflow-y: auto; font-size: 11px; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; background: rgba(255,255,255,0.02); padding: 4px;">
+                    <div style="opacity: 0.6; text-align: center; padding: 20px;">
+                        <div style="font-size: 24px; margin-bottom: 8px; animation: pulse 2s infinite;">📡</div>
+                        <div>Loading live events...</div>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="legend">
-            <h4>🎯 Risk Levels</h4>
-            <div class="legend-item">
-                <div class="legend-color" style="background: var(--high-risk);"></div>
-                High Risk (0.7+)
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: var(--medium-risk);"></div>
-                Medium Risk (0.4-0.7)
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: var(--low-risk);"></div>
-                Low Risk (0-0.4)
-            </div>
-        </div>
+        </div><!-- Close sidebar-content -->
     </aside>
+    </div>
 
     <script>
         // Global variables
@@ -436,15 +880,98 @@
         let svgMap = null;
         
         // Zoom and pan variables
-        let currentZoom = 1;
+        let currentZoom = 1.0; // Default 100% zoom
         let currentX = 0;
         let currentY = 0;
         let isDragging = false;
         let lastMouseX = 0;
         let lastMouseY = 0;
-        const minZoom = 0.5;
+        const minZoom = 0.3;
         const maxZoom = 5;
-        const zoomStep = 0.2;
+        const zoomStep = 0.1;
+        
+        // Pan boundaries - prevents scrolling too far
+        const maxPanDistance = 400; // Reduced for tighter control
+        
+        // Theme Toggle Function
+        function toggleTheme() {
+            const body = document.body;
+            const themeToggle = document.getElementById('theme-toggle');
+            const currentTheme = body.getAttribute('data-theme');
+            
+            if (currentTheme === 'light') {
+                body.removeAttribute('data-theme');
+                themeToggle.innerHTML = '🌜';
+                themeToggle.setAttribute('data-tooltip', 'Switch to Light');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.setAttribute('data-theme', 'light');
+                themeToggle.innerHTML = '☀';
+                themeToggle.setAttribute('data-tooltip', 'Switch to Dark');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+        
+        // Load saved theme
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const themeToggle = document.getElementById('theme-toggle');
+            if (savedTheme === 'light') {
+                document.body.setAttribute('data-theme', 'light');
+                themeToggle.innerHTML = '☀';
+                themeToggle.setAttribute('data-tooltip', 'Switch to Dark');
+            }
+        }
+        
+        // Ping Measurement Function
+        async function measurePing() {
+            const startTime = performance.now();
+            try {
+                await fetch('/api/v1/stats', { method: 'HEAD' });
+                const endTime = performance.now();
+                const ping = Math.round(endTime - startTime);
+                
+                // Update ping display
+                const pingValue = document.getElementById('ping-value');
+                const networkBars = document.getElementById('network-bars');
+                
+                pingValue.textContent = ping;
+                
+                // Update network bars color and signal strength based on ping
+                let colorClass = '';
+                let signalClass = '';
+                
+                if (ping < 30) {
+                    colorClass = 'ping-excellent'; // Green
+                    signalClass = 'signal-excellent'; // All 4 bars
+                } else if (ping < 80) {
+                    colorClass = 'ping-excellent'; // Green
+                    signalClass = 'signal-good'; // 3 bars
+                } else if (ping < 150) {
+                    colorClass = 'ping-good'; // Yellow
+                    signalClass = 'signal-medium'; // 2 bars
+                } else {
+                    colorClass = 'ping-poor'; // Red
+                    signalClass = 'signal-weak'; // 1 bar
+                }
+                
+                // Remove old classes
+                networkBars.classList.remove('ping-excellent', 'ping-good', 'ping-poor', 
+                                            'signal-excellent', 'signal-good', 'signal-medium', 'signal-weak');
+                networkBars.classList.add(colorClass, signalClass);
+                
+            } catch (error) {
+                document.getElementById('ping-value').textContent = '--';
+                const networkBars = document.getElementById('network-bars');
+                networkBars.classList.remove('ping-excellent', 'ping-good', 'ping-poor', 
+                                            'signal-excellent', 'signal-good', 'signal-medium', 'signal-weak');
+                networkBars.classList.add('ping-poor', 'signal-weak');
+            }
+        }
+        
+        // Start ping measurement every 3 seconds
+        setInterval(measurePing, 3000);
+        measurePing(); // Initial ping
         
         // Initialize the enhanced heatmap
         async function initializeEnhancedHeatmap() {
@@ -490,6 +1017,7 @@
                 if (svgMap) {
                     svgMap.style.width = '100%';
                     svgMap.style.height = '100%';
+                    svgMap.style.transformOrigin = '0 0'; // Ensure consistent transform origin
                     
                     // Add click handlers to all paths
                     const paths = svgMap.querySelectorAll('path');
@@ -502,6 +1030,14 @@
                     
                     // Setup zoom and pan functionality
                     setupZoomAndPan();
+                    
+                    // Setup resizer
+                    setupResizer();
+                    
+                    // Center and apply initial 50% zoom
+                    setTimeout(() => {
+                        centerMap();
+                    }, 100);
                 }
             } catch (error) {
                 console.error('Failed to load SVG map:', error);
@@ -509,24 +1045,74 @@
             }
         }
         
+        function generateDemoData() {
+            // Demo data for testing when backend is unavailable
+            const states = [
+                'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+                'Delhi', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh',
+                'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra',
+                'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha',
+                'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana',
+                'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+                'Jammu and Kashmir', 'Ladakh'
+            ];
+            
+            return states.map(state => ({
+                state: state,
+                total_events: Math.floor(Math.random() * 100) + 10,
+                fake_events: Math.floor(Math.random() * 30),
+                real_events: Math.floor(Math.random() * 50) + 10,
+                uncertain_events: Math.floor(Math.random() * 20),
+                avg_fake_score: Math.random() * 0.8,
+                last_updated: new Date().toISOString()
+            }));
+        }
+        
         async function loadHeatmapData() {
             try {
                 const response = await fetch('/api/v1/heatmap/data');
-                const data = await response.json();
                 
-                heatmapData = data.heatmap_data || [];
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Raw API response:', data);
+                
+                // Handle both array and object with heatmap_data property
+                if (Array.isArray(data)) {
+                    heatmapData = data;
+                } else if (data.heatmap_data && Array.isArray(data.heatmap_data)) {
+                    heatmapData = data.heatmap_data;
+                } else if (data.states && Array.isArray(data.states)) {
+                    heatmapData = data.states;
+                } else {
+                    console.warn('Unexpected data format:', data);
+                    heatmapData = [];
+                }
+                
+                console.log(`Loaded ${heatmapData.length} states`);
                 
                 // Apply colors to map
                 applyHeatmapColors();
                 
             } catch (error) {
                 console.error('Failed to load heatmap data:', error);
+                console.log('Using fallback demo data');
+                // Use demo data for testing
+                heatmapData = generateDemoData();
+                applyHeatmapColors();
             }
         }
         
         function applyHeatmapColors() {
-            if (!svgMap || !heatmapData.length) {
-                console.log('Cannot apply colors:', { svgMap: !!svgMap, dataLength: heatmapData.length });
+            if (!svgMap) {
+                console.log('Cannot apply colors: SVG map not loaded');
+                return;
+            }
+            
+            if (!Array.isArray(heatmapData) || heatmapData.length === 0) {
+                console.log('Cannot apply colors: heatmapData is', typeof heatmapData, heatmapData);
                 return;
             }
             
@@ -644,22 +1230,54 @@
         }
         
         function handleStateClick(event) {
+            console.log('State clicked:', event.target);
             const path = event.target;
             const stateData = findStateData(path);
             
+            console.log('Found state data:', stateData);
+            
             if (stateData) {
                 // Remove previous selection
-                svgMap.querySelectorAll('.selected').forEach(p => p.classList.remove('selected'));
+                if (svgMap) {
+                    svgMap.querySelectorAll('.selected').forEach(p => p.classList.remove('selected'));
+                }
                 
                 // Select current state
                 path.classList.add('selected');
                 selectedState = stateData.state;
+                
+                console.log('Calling showStateDetails for:', stateData.state);
                 
                 // Show state details
                 showStateDetails(stateData);
                 
                 // Load state-specific events
                 loadStateEvents(stateData.state);
+            } else {
+                console.warn('No state data found for clicked element');
+            }
+        }
+        
+        function resetSidebar() {
+            console.log('Resetting sidebar');
+            
+            // Hide back button
+            document.getElementById('back-button').style.display = 'none';
+            
+            // Reset header
+            document.getElementById('stateName').textContent = 'Select a State';
+            document.getElementById('state-subtitle').textContent = 'Click on any state to view detailed analysis';
+            
+            // Hide state content
+            document.getElementById('stateContent').style.display = 'none';
+            
+            // Show legend
+            document.getElementById('risk-legend').style.display = 'block';
+            
+            // Clear selection
+            selectedState = null;
+            if (svgMap) {
+                svgMap.querySelectorAll('.selected').forEach(p => p.classList.remove('selected'));
             }
         }
         
@@ -678,14 +1296,31 @@
         
         function showTooltip(event, stateData) {
             const tooltip = document.getElementById('tooltip');
+            const riskPercent = (stateData.avg_fake_score * 100).toFixed(1);
+            const riskLevel = stateData.avg_fake_score >= 0.6 ? 'High' : stateData.avg_fake_score >= 0.4 ? 'Medium' : 'Low';
+            const riskColor = stateData.avg_fake_score >= 0.6 ? '#dc3545' : stateData.avg_fake_score >= 0.4 ? '#ffc107' : '#28a745';
             
             tooltip.innerHTML = `
-                <div style="font-weight: bold; margin-bottom: 4px;">${stateData.state}</div>
-                <div>Capital: ${stateData.capital}</div>
-                <div>Total Events: ${stateData.total_events}</div>
-                <div>Fake News: ${stateData.fake_news_count}</div>
-                <div>Risk Level: <span class="risk-badge risk-${stateData.risk_level.toLowerCase()}">${stateData.risk_level}</span></div>
-                <div>Avg Score: ${stateData.avg_fake_score}</div>
+                <div style="font-weight: bold; margin-bottom: 6px; font-size: 13px; color: var(--accent);">${stateData.state}</div>
+                <div style="display: grid; gap: 4px; font-size: 11px;">
+                    <div style="display: flex; justify-content: space-between; gap: 12px;">
+                        <span style="opacity: 0.8;">Total Events:</span>
+                        <span style="font-weight: 600;">${stateData.total_events || 0}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; gap: 12px;">
+                        <span style="opacity: 0.8;">Fake:</span>
+                        <span style="font-weight: 600; color: #dc3545;">${stateData.fake_events || 0}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; gap: 12px;">
+                        <span style="opacity: 0.8;">Real:</span>
+                        <span style="font-weight: 600; color: #28a745;">${stateData.real_events || 0}</span>
+                    </div>
+                    <div style="margin-top: 4px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                        <span style="opacity: 0.8;">Risk:</span>
+                        <span style="font-weight: 700; color: ${riskColor};">${riskLevel} (${riskPercent}%)</span>
+                    </div>
+                </div>
+                <div style="margin-top: 6px; font-size: 9px; opacity: 0.6; text-align: center;">Click to view details</div>
             `;
             
             tooltip.style.display = 'block';
@@ -698,120 +1333,203 @@
         }
         
         function showStateDetails(stateData) {
+            console.log('Showing details for state:', stateData);
+            
+            // Show back button
+            document.getElementById('back-button').style.display = 'block';
+            
+            // Update header
             document.getElementById('stateName').textContent = stateData.state;
+            document.getElementById('state-subtitle').textContent = `Analyzing ${stateData.total_events || 0} events from this region`;
             
-            const trendingTopics = stateData.trending_topics.map(topic => 
-                `<span class="topic-tag">${topic}</span>`
-            ).join('');
+            // Calculate risk percentage
+            const riskPercent = (stateData.avg_fake_score * 100).toFixed(1);
+            const fakePercent = stateData.total_events > 0 ? ((stateData.fake_events / stateData.total_events) * 100).toFixed(1) : 0;
+            const realPercent = stateData.total_events > 0 ? ((stateData.real_events / stateData.total_events) * 100).toFixed(1) : 0;
             
-            const headlines = stateData.recent_headlines.map(headline => 
-                `<div class="headline">${headline}</div>`
-            ).join('');
+            // Hide legend temporarily
+            document.getElementById('risk-legend').style.display = 'none';
             
-            document.getElementById('stateContent').innerHTML = `
-                <div class="state-stats">
-                    <div class="stat-row">
-                        <span>Capital:</span>
-                        <span class="stat-value">${stateData.capital}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span>Total Events:</span>
-                        <span class="stat-value">${stateData.total_events}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span>Fake News:</span>
-                        <span class="stat-value" style="color: var(--high-risk);">${stateData.fake_news_count}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span>Real News:</span>
-                        <span class="stat-value" style="color: var(--low-risk);">${stateData.real_news_count}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span>Uncertain:</span>
-                        <span class="stat-value" style="color: var(--medium-risk);">${stateData.uncertain_count}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span>Risk Level:</span>
-                        <span class="risk-badge risk-${stateData.risk_level.toLowerCase()}">${stateData.risk_level}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span>Avg Score:</span>
-                        <span class="stat-value">${stateData.avg_fake_score}</span>
+            // Show and populate state content with animation
+            const stateContent = document.getElementById('stateContent');
+            stateContent.style.display = 'block';
+            stateContent.className = 'state-content-animated';
+            stateContent.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-size: 13px; margin-bottom: 10px; color: var(--accent); display: flex; align-items: center; gap: 6px;">
+                        📊 State Statistics
+                    </h4>
+                    <div style="display: grid; gap: 10px;">
+                        <div style="padding: 12px; background: rgba(59, 130, 246, 0.08); border-radius: 8px; border-left: 3px solid var(--accent);">
+                            <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">Total Events Analyzed</div>
+                            <div style="font-size: 20px; font-weight: 700; color: var(--accent);">${stateData.total_events || 0}</div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                            <div style="padding: 10px; background: rgba(220, 53, 69, 0.1); border-radius: 6px; text-align: center;">
+                                <div style="font-size: 10px; opacity: 0.7; margin-bottom: 2px;">Fake</div>
+                                <div style="font-size: 16px; font-weight: 700; color: #dc3545;">${stateData.fake_events || 0}</div>
+                                <div style="font-size: 9px; opacity: 0.6;">${fakePercent}%</div>
+                            </div>
+                            <div style="padding: 10px; background: rgba(40, 167, 69, 0.1); border-radius: 6px; text-align: center;">
+                                <div style="font-size: 10px; opacity: 0.7; margin-bottom: 2px;">Real</div>
+                                <div style="font-size: 16px; font-weight: 700; color: #28a745;">${stateData.real_events || 0}</div>
+                                <div style="font-size: 9px; opacity: 0.6;">${realPercent}%</div>
+                            </div>
+                            <div style="padding: 10px; background: rgba(255, 193, 7, 0.1); border-radius: 6px; text-align: center;">
+                                <div style="font-size: 10px; opacity: 0.7; margin-bottom: 2px;">Uncertain</div>
+                                <div style="font-size: 16px; font-weight: 700; color: #ffc107;">${stateData.uncertain_events || 0}</div>
+                            </div>
+                        </div>
+                        
+                        <div style="padding: 10px; background: rgba(139, 92, 246, 0.08); border-radius: 6px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 11px; opacity: 0.8;">Avg. Risk Score</span>
+                                <span style="font-size: 14px; font-weight: 700; color: ${stateData.avg_fake_score >= 0.6 ? '#dc3545' : stateData.avg_fake_score >= 0.4 ? '#ffc107' : '#28a745'};">${riskPercent}%</span>
+                            </div>
+                            <div style="margin-top: 6px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+                                <div style="width: ${riskPercent}%; height: 100%; background: ${stateData.avg_fake_score >= 0.6 ? '#dc3545' : stateData.avg_fake_score >= 0.4 ? '#ffc107' : '#28a745'}; transition: width 0.3s ease;"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                ${stateData.trending_topics.length > 0 ? `
-                    <div class="trending-topics">
-                        <h4>📈 Trending Topics</h4>
-                        ${trendingTopics}
+                <div style="margin-top: 20px;">
+                    <h4 style="font-size: 13px; margin-bottom: 10px; color: var(--accent); display: flex; align-items: center; gap: 6px;">
+                        🔍 Recent Events
+                        <div class="loading-spinner" style="width: 12px; height: 12px; border: 2px solid rgba(59, 130, 246, 0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-left: auto;"></div>
+                    </h4>
+                    <div id="state-events-list" style="opacity: 0.6; text-align: center; padding: 20px; font-size: 11px;">
+                        Loading events...
                     </div>
-                ` : ''}
-                
-                ${stateData.recent_headlines.length > 0 ? `
-                    <div class="recent-headlines">
-                        <h4>📰 Recent Headlines</h4>
-                        ${headlines}
-                    </div>
-                ` : ''}
+                </div>
             `;
         }
         
         async function loadStateEvents(state) {
+            const eventsList = document.getElementById('state-events-list');
+            
             try {
                 const response = await fetch(`/api/v1/events/state/${encodeURIComponent(state)}`);
                 const data = await response.json();
                 
                 if (data.events && data.events.length > 0) {
-                    const eventsHtml = data.events.map(event => `
-                        <div class="headline">
-                            <div style="font-weight: bold; margin-bottom: 4px;">${event.title}</div>
-                            <div style="font-size: 12px; opacity: 0.8;">
-                                ${event.source} • ${event.verdict.toUpperCase()} (${(event.confidence * 100).toFixed(0)}%)
+                    const eventsHtml = data.events.slice(0, 10).map((event, index) => {
+                        const classification = event.classification || event.verdict || 'uncertain';
+                        const verdictColor = classification === 'fake' ? '#dc3545' : 
+                                           classification === 'real' ? '#28a745' : '#ffc107';
+                        const confidencePercent = Math.round((event.confidence || event.fake_probability || 0) * 100);
+                        
+                        // Calculate time ago
+                        const timestamp = new Date(event.timestamp);
+                        const now = new Date();
+                        const diffMinutes = Math.floor((now - timestamp) / (1000 * 60));
+                        const timeAgo = diffMinutes < 1 ? 'Just now' : 
+                                       diffMinutes < 60 ? `${diffMinutes}m ago` : 
+                                       diffMinutes < 1440 ? `${Math.floor(diffMinutes/60)}h ago` : 
+                                       `${Math.floor(diffMinutes/1440)}d ago`;
+                        
+                        return `
+                            <div style="border-left: 3px solid ${verdictColor}; padding: 10px 12px; margin-bottom: 8px; background: ${index % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.01)'}; border-radius: 0 6px 6px 0; transition: all 0.2s ease; cursor: pointer;"
+                                 onmouseover="this.style.background='rgba(255,255,255,0.06)'; this.style.transform='translateX(3px)'" 
+                                 onmouseout="this.style.background='${index % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.01)'}'; this.style.transform='translateX(0)'"
+                                 onclick="window.open('${event.url || '#'}', '_blank')">
+                                <div style="font-weight: 600; margin-bottom: 6px; font-size: 11px; line-height: 1.4; color: var(--text-primary);">
+                                    ${event.title.substring(0, 100)}${event.title.length > 100 ? '...' : ''}
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <div style="display: flex; align-items: center; gap: 8px; font-size: 10px;">
+                                        <span style="color: var(--accent); font-weight: 500;">${event.source || 'Unknown'}</span>
+                                        <span style="opacity: 0.5;">•</span>
+                                        <span style="opacity: 0.6;">${timeAgo}</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <span style="color: ${verdictColor}; font-weight: 700; font-size: 9px; padding: 2px 8px; background: ${verdictColor}15; border-radius: 10px; text-transform: uppercase;">
+                                            ${classification}
+                                        </span>
+                                        <span style="font-size: 9px; opacity: 0.7;">${confidencePercent}%</span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    `).join('');
+                        `;
+                    }).join('');
                     
-                    document.getElementById('stateContent').innerHTML += `
-                        <div style="margin-top: 20px;">
-                            <h4>🔍 Recent Analysis</h4>
-                            ${eventsHtml}
+                    eventsList.innerHTML = eventsHtml;
+                } else {
+                    eventsList.innerHTML = `
+                        <div style="text-align: center; padding: 30px; opacity: 0.5;">
+                            <div style="font-size: 32px; margin-bottom: 10px;">📭</div>
+                            <div style="font-size: 12px;">No events found for this state</div>
+                            <div style="font-size: 10px; margin-top: 5px; opacity: 0.7;">Events will appear as they are detected</div>
                         </div>
                     `;
                 }
             } catch (error) {
                 console.error('Failed to load state events:', error);
+                eventsList.innerHTML = `
+                    <div style="text-align: center; padding: 30px; opacity: 0.6; color: #dc3545;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">⚠️</div>
+                        <div style="font-size: 11px;">Failed to load events</div>
+                        <div style="font-size: 10px; margin-top: 5px; opacity: 0.7;">Please try refreshing</div>
+                    </div>
+                `;
             }
         }
         
         async function updateStatusBar() {
             try {
-                const response = await fetch('/api/v1/dashboard/stats');
-                const data = await response.json();
+                // Try to fetch dashboard stats
+                let totalEvents = 0;
+                let accuracyPercent = 50;
                 
-                document.getElementById('total-events').textContent = data.total_events || 0;
+                try {
+                    const response = await fetch('/api/v1/dashboard/stats');
+                    if (response.ok) {
+                        const data = await response.json();
+                        totalEvents = data.total_events || 0;
+                    }
+                } catch (e) {
+                    console.log('Dashboard stats unavailable, using calculated values');
+                    // Calculate from heatmap data
+                    totalEvents = heatmapData.reduce((sum, state) => sum + (state.total_events || 0), 0);
+                }
+                
+                document.getElementById('total-events').textContent = totalEvents;
                 document.getElementById('active-states').textContent = heatmapData.length || 0;
                 document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
                 
-                // Update processing status
-                const processingResponse = await fetch('/api/v1/stats');
-                const processingData = await processingResponse.json();
-                
+                // Update processing status - use GET instead of HEAD
                 const statusDot = document.querySelector('.status-dot');
                 const statusText = document.querySelector('.status-bar .status-item span');
                 
-                if (processingData.processing_active) {
-                    statusDot.style.background = '#28a745';
-                    statusText.textContent = 'Live Processing';
-                    statusDot.style.animation = 'pulse 2s infinite';
-                } else {
+                try {
+                    const processingResponse = await fetch('/api/v1/stats', { method: 'GET' });
+                    if (processingResponse.ok) {
+                        const processingData = await processingResponse.json();
+                        
+                        if (processingData.processing_active) {
+                            statusDot.style.background = '#28a745';
+                            statusText.textContent = 'Live Processing';
+                            statusDot.style.animation = 'pulse 2s infinite';
+                        } else {
+                            statusDot.style.background = '#ffc107';
+                            statusText.textContent = 'Standby';
+                            statusDot.style.animation = 'none';
+                        }
+                        
+                        const accuracy = processingData.recent_hour_stats?.classification_accuracy || 0.5;
+                        accuracyPercent = Math.round(accuracy * 100);
+                    } else {
+                        throw new Error('Stats endpoint unavailable');
+                    }
+                } catch (e) {
+                    console.log('Stats endpoint unavailable, using demo mode');
                     statusDot.style.background = '#ffc107';
                     statusText.textContent = 'Standby';
                     statusDot.style.animation = 'none';
+                    accuracyPercent = 50;
                 }
                 
-                // Update classification accuracy
-                const accuracy = processingData.recent_hour_stats?.classification_accuracy || 0;
-                const accuracyPercent = Math.round(accuracy * 100);
                 document.getElementById('classification-accuracy').textContent = `${accuracyPercent}%`;
                 
                 // Color code accuracy
@@ -826,21 +1544,79 @@
                 
             } catch (error) {
                 console.error('Failed to update status bar:', error);
-                const statusDot = document.querySelector('.status-dot');
-                const statusText = document.querySelector('.status-bar .status-item span');
-                if (statusDot && statusText) {
-                    statusDot.style.background = '#dc3545';
-                    statusText.textContent = 'Connection Error';
-                    statusDot.style.animation = 'none';
-                }
+                // Set fallback values
+                document.getElementById('total-events').textContent = heatmapData.reduce((sum, state) => sum + (state.total_events || 0), 0);
+                document.getElementById('active-states').textContent = heatmapData.length || 0;
+                document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+                document.getElementById('classification-accuracy').textContent = '50%';
             }
         }
         
         // Zoom and Pan Functions
+        function applyPanBoundaries() {
+            // Very strict boundaries - keep map centered and prevent scrolling to empty space
+            const mapWrap = document.getElementById('mapwrap');
+            if (!mapWrap || !svgMap) return;
+            
+            const container = mapWrap.getBoundingClientRect();
+            
+            // Get actual SVG dimensions using getBBox
+            const svgBBox = svgMap.getBBox();
+            const svgWidth = svgBBox.width || 800;
+            const svgHeight = svgBBox.height || 800;
+            
+            // Calculate scaled dimensions
+            const scaledWidth = svgWidth * currentZoom;
+            const scaledHeight = svgHeight * currentZoom;
+            
+            // Calculate how much we can pan while keeping map visible
+            // Max pan = (container size - scaled map size) / 2 + small margin
+            const margin = 50; // Small margin to prevent going too far
+            
+            const maxPanX = Math.max(0, (container.width - scaledWidth) / 2) + margin;
+            const maxPanY = Math.max(0, (container.height - scaledHeight) / 2) + margin;
+            
+            // If map is larger than container, allow panning within bounds
+            const minPanX = Math.min(0, container.width - scaledWidth - margin);
+            const minPanY = Math.min(0, container.height - scaledHeight - margin);
+            
+            // Apply constraints
+            currentX = Math.max(minPanX, Math.min(maxPanX, currentX));
+            currentY = Math.max(minPanY, Math.min(maxPanY, currentY));
+        }
+        
         function updateTransform() {
             if (svgMap) {
+                applyPanBoundaries();
                 svgMap.style.transform = `translate(${currentX}px, ${currentY}px) scale(${currentZoom})`;
                 document.getElementById('zoom-level').textContent = Math.round(currentZoom * 100) + '%';
+            }
+        }
+        
+        function centerMap() {
+            // Center the map in the viewport with proper visual centering
+            const mapWrap = document.getElementById('mapwrap');
+            if (svgMap && mapWrap) {
+                const rect = mapWrap.getBoundingClientRect();
+                
+                // Get actual SVG dimensions
+                const svgBBox = svgMap.getBBox();
+                const svgWidth = svgBBox.width || 800;
+                const svgHeight = svgBBox.height || 800;
+                
+                // Calculate scaled dimensions
+                const scaledWidth = svgWidth * currentZoom;
+                const scaledHeight = svgHeight * currentZoom;
+                
+                // Center the map both horizontally and vertically
+                // Add offset for better visual centering
+                currentX = (rect.width - scaledWidth) / 2 - 20; // 20px offset left
+                currentY = (rect.height - scaledHeight) / 2 + 200; // 110px offset down for proper centering
+                
+                // Ensure SVG has proper transform origin
+                svgMap.style.transformOrigin = '0 0';
+                
+                updateTransform();
             }
         }
         
@@ -859,10 +1635,41 @@
         }
         
         function resetZoom() {
-            currentZoom = 1;
-            currentX = 0;
-            currentY = 0;
-            updateTransform();
+            currentZoom = 1.0; // Reset to 100%
+            centerMap();
+        }
+        
+        // Resizer functionality
+        function setupResizer() {
+            const resizer = document.querySelector('.resizer');
+            const sidebar = document.querySelector('aside');
+            let isResizing = false;
+            
+            if (resizer && sidebar) {
+                resizer.addEventListener('mousedown', (e) => {
+                    isResizing = true;
+                    document.body.style.cursor = 'ew-resize';
+                    document.body.style.userSelect = 'none';
+                    e.preventDefault();
+                });
+                
+                document.addEventListener('mousemove', (e) => {
+                    if (!isResizing) return;
+                    
+                    const newWidth = window.innerWidth - e.clientX;
+                    if (newWidth >= 300 && newWidth <= 600) {
+                        sidebar.style.width = newWidth + 'px';
+                    }
+                });
+                
+                document.addEventListener('mouseup', () => {
+                    if (isResizing) {
+                        isResizing = false;
+                        document.body.style.cursor = '';
+                        document.body.style.userSelect = '';
+                    }
+                });
+            }
         }
         
         function setupZoomAndPan() {
@@ -1010,14 +1817,62 @@
             alert('Debug info logged to console. Press F12 to view.');
         }
         
-        function forceRefresh() {
+        async function forceRefresh() {
             console.log('Force refreshing map data...');
-            loadHeatmapData().then(() => {
+            
+            // Add refresh animation to button
+            const refreshBtn = event.target.closest('button');
+            const refreshIcon = refreshBtn.querySelector('span');
+            const originalText = refreshIcon.textContent;
+            
+            // Animate the refresh icon
+            refreshIcon.textContent = '⟳';
+            refreshIcon.style.display = 'inline-block';
+            refreshIcon.classList.add('refreshing');
+            
+            // Create overlay for map and sidebar
+            const mapOverlay = document.createElement('div');
+            mapOverlay.className = 'refreshing-overlay';
+            mapOverlay.innerHTML = '<div class="refresh-spinner"></div>';
+            document.getElementById('mapwrap').appendChild(mapOverlay);
+            
+            const sidebarOverlay = document.createElement('div');
+            sidebarOverlay.className = 'refreshing-overlay';
+            sidebarOverlay.innerHTML = '<div class="refresh-spinner"></div>';
+            document.querySelector('aside').appendChild(sidebarOverlay);
+            
+            try {
+                // Refresh all data
+                await Promise.all([
+                    loadHeatmapData(),
+                    updateStatusBar(),
+                    updateLiveFeed()
+                ]);
+                
                 console.log('Data reloaded, applying colors...');
                 applyHeatmapColors();
-                updateStatusBar();
-                updateLiveFeed();
-            });
+                
+                // Success feedback
+                refreshIcon.textContent = '✓';
+                setTimeout(() => {
+                    refreshIcon.textContent = originalText;
+                    refreshIcon.classList.remove('refreshing');
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Refresh failed:', error);
+                refreshIcon.textContent = '✗';
+                setTimeout(() => {
+                    refreshIcon.textContent = originalText;
+                    refreshIcon.classList.remove('refreshing');
+                }, 1000);
+            } finally {
+                // Remove overlays after animation
+                setTimeout(() => {
+                    mapOverlay.remove();
+                    sidebarOverlay.remove();
+                }, 800);
+            }
         }
         
         // Enhanced live feed with better real-time updates
@@ -1025,17 +1880,44 @@
         let feedUpdateCount = 0;
         
         async function updateLiveFeed() {
+            const liveFeed = document.getElementById('live-feed');
+            
             try {
-                const response = await fetch('/api/v1/events/live?limit=15');
-                const data = await response.json();
+                // Try primary endpoint first
+                let response = await fetch('/api/v1/events/live?limit=15');
                 
-                const liveFeed = document.getElementById('live-feed');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                let data = await response.json();
+                
+                // If no events, try alternative endpoint
+                if (!data.events || data.events.length === 0) {
+                    try {
+                        response = await fetch('/api/v1/events/recent?limit=15');
+                        if (response.ok) {
+                            const altData = await response.json();
+                            if (altData.events && altData.events.length > 0) {
+                                data = altData;
+                            }
+                        }
+                    } catch (e) {
+                        // Silently fail - endpoint not available
+                    }
+                }
+                
                 if (data.events && data.events.length > 0) {
                     feedUpdateCount++;
                     
                     const feedHtml = data.events.map((event, index) => {
-                        const verdictColor = event.verdict === 'fake' ? '#dc3545' : 
-                                           event.verdict === 'real' ? '#28a745' : '#ffc107';
+                        const verdictColor = event.verdict === 'fake' ? '#ef4444' : 
+                                           event.verdict === 'real' ? '#10b981' : '#f59e0b';
+                        const verdictBg = event.verdict === 'fake' ? 'rgba(239, 68, 68, 0.15)' : 
+                                         event.verdict === 'real' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)';
+                        const verdictBorder = event.verdict === 'fake' ? 'rgba(239, 68, 68, 0.4)' : 
+                                             event.verdict === 'real' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(245, 158, 11, 0.4)';
+                        const verdictIcon = event.verdict === 'fake' ? '⚠' : event.verdict === 'real' ? '✓' : '?';
                         const confidencePercent = Math.round(event.confidence * 100);
                         
                         // Calculate realistic time ago based on timestamp
@@ -1052,25 +1934,29 @@
                         const animationStyle = isNew ? 'animation: slideIn 0.5s ease-out;' : '';
                         
                         return `
-                            <div style="border-left: 3px solid ${verdictColor}; padding: 10px 12px; margin-bottom: 1px; background: ${index % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.01)'}; transition: all 0.3s ease; ${animationStyle}" 
-                                 onmouseover="this.style.background='rgba(255,255,255,0.08)'; this.style.transform='translateX(2px)'" 
-                                 onmouseout="this.style.background='${index % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.01)'}'; this.style.transform='translateX(0)'">
-                                <div style="font-weight: bold; margin-bottom: 6px; font-size: 11px; line-height: 1.3;">
-                                    ${event.title.substring(0, 75)}${event.title.length > 75 ? '...' : ''}
+                            <div style="border-left: 3px solid ${verdictColor}; padding: 12px; margin-bottom: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; transition: all 0.3s ease; ${animationStyle}" 
+                                 onmouseover="this.style.background='rgba(255,255,255,0.06)'; this.style.transform='translateX(2px)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'" 
+                                 onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.transform='translateX(0)'; this.style.boxShadow='none'">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                    <div style="font-size: 9px; color: rgba(255,255,255,0.6); display: flex; align-items: center; gap: 4px;">
+                                        <span>🕔</span>
+                                        ${timeAgo}
+                                    </div>
+                                    <div style="font-size: 9px; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; color: rgba(255,255,255,0.7); font-weight: 500;">${event.source}</div>
                                 </div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; opacity: 0.8; margin-bottom: 4px;">
-                                    <span style="color: #667eea; font-weight: 500;">${event.source}</span>
-                                    <span style="color: ${verdictColor}; font-weight: bold; font-size: 9px; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 10px;">
-                                        ${event.verdict.toUpperCase()}
+                                <div style="font-weight: 500; margin-bottom: 8px; font-size: 11px; line-height: 1.4; color: rgba(255,255,255,0.95);">
+                                    ${event.title.substring(0, 85)}${event.title.length > 85 ? '...' : ''}
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="display: inline-flex; align-items: center; gap: 4px; color: ${verdictColor}; font-weight: bold; font-size: 8px; padding: 3px 8px; background: ${verdictBg}; border: 1px solid ${verdictBorder}; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        <span style="font-size: 10px;">${verdictIcon}</span>
+                                        ${event.verdict}
+                                    </span>
+                                    <span style="font-size: 9px; color: ${confidencePercent >= 70 ? '#10b981' : confidencePercent >= 50 ? '#f59e0b' : '#ef4444'}; font-weight: 600;">
+                                        ${confidencePercent}% confident
                                     </span>
                                 </div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 9px; opacity: 0.6;">
-                                    <span>${timeAgo}</span>
-                                    <span style="color: ${confidencePercent >= 70 ? '#28a745' : confidencePercent >= 50 ? '#ffc107' : '#dc3545'};">
-                                        ${confidencePercent}% confidence
-                                    </span>
-                                </div>
-                                ${event.state ? `<div style="font-size: 8px; opacity: 0.5; margin-top: 2px;">📍 ${event.state}</div>` : ''}
+                                ${event.state ? `<div style="font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 6px; display: flex; align-items: center; gap: 4px;"><span>📍</span>${event.state}</div>` : ''}
                             </div>
                         `;
                     }).join('');
@@ -1087,29 +1973,36 @@
                     }
                     
                 } else {
+                    // Show waiting message
+                    const now = new Date();
                     liveFeed.innerHTML = `
-                        <div style="opacity: 0.7; text-align: center; padding: 30px;">
-                            <div style="font-size: 24px; margin-bottom: 10px;">📡</div>
-                            <div>Processing news feeds...</div>
-                            <div style="font-size: 10px; margin-top: 5px; opacity: 0.6;">Waiting for new events</div>
+                        <div style="opacity: 0.6; text-align: center; padding: 30px;">
+                            <div style="font-size: 24px; margin-bottom: 10px; animation: pulse 2s infinite;">⏳</div>
+                            <div style="font-weight: 500; font-size: 12px;">Waiting for new events...</div>
+                            <div style="font-size: 10px; margin-top: 8px; opacity: 0.6;">
+                                Last check: ${now.toLocaleTimeString()}
+                            </div>
                         </div>
                     `;
                 }
                 
             } catch (error) {
-                console.error('Failed to update live feed:', error);
-                document.getElementById('live-feed').innerHTML = `
-                    <div style="opacity: 0.7; text-align: center; padding: 30px; color: #dc3545;">
-                        <div style="font-size: 24px; margin-bottom: 10px;">⚠️</div>
-                        <div>Feed temporarily unavailable</div>
-                        <div style="font-size: 10px; margin-top: 5px; opacity: 0.6;">Retrying connection...</div>
+                console.log('Live feed endpoint unavailable - backend may not be running');
+                liveFeed.innerHTML = `
+                    <div style="opacity: 0.6; text-align: center; padding: 30px;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">📡</div>
+                        <div style="font-size: 11px;">Backend service unavailable</div>
+                        <div style="font-size: 10px; margin-top: 6px; opacity: 0.6;">Start the backend to see live events</div>
                     </div>
                 `;
             }
         }
 
         // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', initializeEnhancedHeatmap);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTheme(); // Load saved theme
+            initializeEnhancedHeatmap();
+        });
     </script>
 </body>
 </html>

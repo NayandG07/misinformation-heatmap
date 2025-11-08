@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Misinformation Heatmap | AI-Powered Detection</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body { 
+            font-family: 'Poppins', sans-serif;
+            background: #0a0a0f;
+            color: #e4e4e7;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Dark Background with Subtle Grid */
+        .bg-dark {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: 
+                radial-gradient(ellipse at top, #1a1a2e 0%, #0a0a0f 100%),
+                linear-gradient(to bottom, #0a0a0f 0%, #16161e 100%);
+        }
+        
+        .bg-dark::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+            background-size: 37.5px 37.5px;
+            animation: gridMove 20s linear infinite;
+        }
+        
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(37.5px, 37.5px); }
+        }
+        
+        .container {
+            max-width: 990px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Navbar */
+        .navbar {
+            padding: 18px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+        
+        .nav-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 100px;
+            font-size: 10px;
+            color: #60a5fa;
+        }
+        
+        .status-dot {
+            width: 4.5px;
+            height: 4.5px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s ease infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+        }
+        
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 60px 0 75px;
+        }
+        
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4.5px 12px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 100px;
+            font-size: 10px;
+            font-weight: 500;
+            color: #a5b4fc;
+            margin-bottom: 24px;
+            animation: fadeInDown 1s ease-out;
+        }
+        
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .hero h1 {
+            font-size: clamp(42px, 6vw, 72px);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            letter-spacing: -0.04em;
+        }
+        
+        .gradient-text {
+            background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 33%, #ec4899 66%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 4s linear infinite;
+            background-size: 300% 100%;
+            font-weight: 700;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% center; }
+            100% { background-position: 300% center; }
+        }
+        
+        .typed-text {
+            display: inline-block;
+            border-right: 2.25px solid #ec4899;
+            animation: blink 1s step-end infinite;
+        }
+        
+        @keyframes blink {
+            50% { border-color: transparent; }
+        }
+        
+        .hero-subtitle {
+            font-size: clamp(13.5px, 1.875vw, 16.5px);
+            line-height: 1.7;
+            color: #94a3b8;
+            max-width: 600px;
+            margin: 0 auto 36px;
+            font-weight: 400;
+            animation: fadeInUp 1s ease-out 0.3s backwards;
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* CTA Buttons */
+        .cta-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 75px;
+            animation: fadeInUp 1s ease-out 0.6s backwards;
+        }
+        
+        .btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 13.5px 30px;
+            font-size: 12.75px;
+            font-weight: 600;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+            color: white;
+            box-shadow: 0 7.5px 30px rgba(59, 130, 246, 0.3);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 45px rgba(59, 130, 246, 0.5);
+        }
+        
+        .btn-secondary {
+            background: rgba(59, 130, 246, 0.1);
+            backdrop-filter: blur(10px);
+            color: #60a5fa;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.5);
+            transform: translateY(-3px);
+        }
+        
+        /* Stats Bar */
+        .stats-section {
+            margin-bottom: 105px;
+        }
+        
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 21px;
+        }
+        
+        .stat-card {
+            position: relative;
+            padding: 30px 24px;
+            background: linear-gradient(135deg, rgba(30, 64, 175, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 18px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+            transform: scaleX(0);
+            transition: transform 0.6s;
+        }
+        
+        .stat-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-8px);
+            background: linear-gradient(135deg, rgba(30, 64, 175, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 15px 45px rgba(59, 130, 246, 0.15);
+        }
+        
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(30px, 3.75vw, 42px);
+            font-weight: 700;
+            margin-bottom: 9px;
+            background: linear-gradient(135deg, #3b82f6 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .stat-label {
+            font-size: 10.5px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1.125px;
+        }
+        
+        /* MVP Section */
+        .mvp-section {
+            margin-bottom: 105px;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .section-label {
+            display: inline-block;
+            padding: 6px 15px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 100px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #60a5fa;
+            text-transform: uppercase;
+            letter-spacing: 0.75px;
+            margin-bottom: 18px;
+        }
+        
+        .section-title {
+            font-size: clamp(30px, 4.5vw, 48px);
+            font-weight: 800;
+            margin-bottom: 15px;
+            letter-spacing: -0.03em;
+        }
+        
+        .section-title .gradient-text {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .section-description {
+            font-size: 13.5px;
+            color: #94a3b8;
+            max-width: 525px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+        
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+            gap: 24px;
+        }
+        
+        .feature-card {
+            position: relative;
+            padding: 36px 27px;
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            border-radius: 21px;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        
+        .feature-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.6s;
+        }
+        
+        .feature-card:hover::after {
+            opacity: 1;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            background: rgba(30, 41, 59, 0.7);
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 22.5px 60px rgba(59, 130, 246, 0.2);
+        }
+        
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 21px;
+            transition: transform 0.4s;
+        }
+        
+        .feature-card:hover .feature-icon {
+            transform: scale(1.1) rotate(-5deg);
+        }
+        
+        .feature-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #f1f5f9;
+            letter-spacing: -0.02em;
+        }
+        
+        .feature-description {
+            font-size: 12px;
+            line-height: 1.8;
+            color: #94a3b8;
+            font-weight: 400;
+        }
+        
+        /* Powers Section */
+        .powers-section {
+            margin-bottom: 105px;
+        }
+        
+        .powers-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 21px;
+        }
+        
+        .power-item {
+            padding: 27px 21px;
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            border-radius: 15px;
+            text-align: center;
+            transition: all 0.4s;
+        }
+        
+        .power-item:hover {
+            transform: translateY(-5px);
+            border-color: rgba(59, 130, 246, 0.4);
+            background: rgba(30, 41, 59, 0.6);
+        }
+        
+        .power-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 36px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6, #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 9px;
+        }
+        
+        .power-label {
+            font-size: 11.25px;
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 60px 0 45px;
+            border-top: 1px solid rgba(59, 130, 246, 0.1);
+        }
+        
+        .footer-content {
+            color: #64748b;
+            font-size: 10.5px;
+        }
+        
+        .footer-brand {
+            font-weight: 600;
+            background: linear-gradient(135deg, #3b82f6, #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .powers-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .hero {
+                padding: 45px 0 60px;
+            }
+            
+            .stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .powers-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .cta-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-dark"></div>
+    
+    <div class="container">
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div class="logo">Misinformation Heatmap</div>
+            <div class="nav-status">
+                <span class="status-dot"></span>
+                <span>{SYSTEM_STATUS}</span>
+            </div>
+        </nav>
+        
+        <!-- Hero Section -->
+        <div class="hero">
+            <div class="hero-badge">
+                🚀 Powered by AI & Machine Learning
+            </div>
+            <h1>
+                <span class="gradient-text">Real-Time</span><br/>
+                <span class="typed-text" id="typed"></span>
+            </h1>
+            <p class="hero-subtitle">
+                Advanced AI-powered platform that detects and verifies misinformation across Indian media in real-time using IndicBERT, satellite imagery, and comprehensive fact-checking networks.
+            </p>
+            
+            <!-- CTA Buttons -->
+            <div class="cta-group">
+                <a href="/map/enhanced-india-heatmap.html" class="btn btn-primary">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <span>Explore Heatmap</span>
+                </a>
+                <a href="/dashboard" class="btn btn-secondary">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    <span>View Dashboard</span>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Stats Section -->
+        <div class="stats-section">
+            <div class="section-header">
+                <div class="section-label">Platform Metrics</div>
+                <h2 class="section-title">
+                    Real-Time <span class="gradient-text">Performance</span> Insights
+                </h2>
+                <p class="section-description">
+                    Track our platform's live performance metrics and see how we're continuously monitoring and analyzing misinformation across India with cutting-edge AI technology.
+                </p>
+            </div>
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-events">{TOTAL_EVENTS}</div>
+                    <div class="stat-label">Events Analyzed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">95.8%</div>
+                    <div class="stat-label">ML Accuracy</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">29</div>
+                    <div class="stat-label">States Covered</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{STATUS}</div>
+                    <div class="stat-label">System Status</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- MVP Features Section -->
+        <div class="mvp-section">
+            <div class="section-header">
+                <div class="section-label">Platform Capabilities</div>
+                <h2 class="section-title">
+                    <span class="gradient-text">Core Features</span> & Technologies
+                </h2>
+                <p class="section-description">
+                    Our platform combines cutting-edge AI, satellite verification, and fact-checking networks to deliver unparalleled accuracy in misinformation detection.
+                </p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <div class="feature-title">IndicBERT AI Engine</div>
+                    <div class="feature-description">
+                        Advanced transformer model specifically trained for Indian languages, understanding cultural nuances, regional context, and linguistic patterns across 22+ Indian languages.
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🛰️</div>
+                    <div class="feature-title">Satellite Intelligence</div>
+                    <div class="feature-description">
+                        Google Earth Engine integration for real-time verification of location-based claims, infrastructure analysis, and event validation using high-resolution satellite imagery.
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <div class="feature-title">Fact-Check Network</div>
+                    <div class="feature-description">
+                        Direct integration with India's leading fact-checkers: Alt News, Boom Live, WebQoof, and more. Cross-reference against verified databases for instant validation.
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🗺️</div>
+                    <div class="feature-title">Interactive Heatmap</div>
+                    <div class="feature-description">
+                        Real-time visualization of misinformation spread patterns across all 29 Indian states with detailed state-wise analytics and trending topics identification.
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-title">Real-Time Monitoring</div>
+                    <div class="feature-description">
+                        Live data ingestion from 32+ trusted Indian news sources with instant detection, classification, and alert systems for emerging misinformation trends.
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-title">Deep Analytics</div>
+                    <div class="feature-description">
+                        Comprehensive multi-factor analysis combining machine learning, linguistic pattern recognition, source credibility scoring, and temporal trend analysis.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Powers Section -->
+        <div class="powers-section">
+            <div class="section-header">
+                <div class="section-label">Platform Power</div>
+                <h2 class="section-title">
+                    Built for <span class="gradient-text">Scale & Speed</span>
+                </h2>
+                <p class="section-description">
+                    Our infrastructure is designed to handle massive data volumes while maintaining real-time performance and accuracy.
+                </p>
+            </div>
+            <div class="powers-grid">
+                <div class="power-item">
+                    <div class="power-number">32+</div>
+                    <div class="power-label">News Sources</div>
+                </div>
+                <div class="power-item">
+                    <div class="power-number">29</div>
+                    <div class="power-label">States Monitored</div>
+                </div>
+                <div class="power-item">
+                    <div class="power-number">22+</div>
+                    <div class="power-label">Languages Supported</div>
+                </div>
+                <div class="power-item">
+                    <div class="power-number">95.8%</div>
+                    <div class="power-label">Detection Accuracy</div>
+                </div>
+                <div class="power-item">
+                    <div class="power-number">24/7</div>
+                    <div class="power-label">Real-Time Monitoring</div>
+                </div>
+                <div class="power-item">
+                    <div class="power-number">&lt;2s</div>
+                    <div class="power-label">Analysis Speed</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-content">
+                <p>© 2024 <span class="footer-brand">Misinformation Heatmap</span>. Powered by AI, Machine Learning & Satellite Intelligence.</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Typing animation
+        const words = ['Misinformation Detection', 'Fake News Analysis', 'Truth Verification', 'Media Intelligence'];
+        let wordIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+        const typedElement = document.getElementById('typed');
+        
+        function type() {
+            const currentWord = words[wordIndex];
+            
+            if (isDeleting) {
+                typedElement.textContent = currentWord.substring(0, charIndex - 1);
+                charIndex--;
+            } else {
+                typedElement.textContent = currentWord.substring(0, charIndex + 1);
+                charIndex++;
+            }
+            
+            if (!isDeleting && charIndex === currentWord.length) {
+                isDeleting = true;
+                setTimeout(type, 2000);
+            } else if (isDeleting && charIndex === 0) {
+                isDeleting = false;
+                wordIndex = (wordIndex + 1) % words.length;
+                setTimeout(type, 500);
+            } else {
+                setTimeout(type, isDeleting ? 50 : 100);
+            }
+        }
+        
+        // Start typing animation
+        setTimeout(type, 1000);
+        
+        // Update stats periodically
+        setInterval(async () => {
+            try {
+                const response = await fetch('/api/v1/stats');
+                const data = await response.json();
+                const el = document.getElementById('total-events');
+                if (el && data.total_events !== undefined) {
+                    el.textContent = data.total_events;
+                }
+            } catch (e) {
+                console.log('Stats update failed:', e);
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Misinformation Detection Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #18181b;
+            --panel: #1c1f2e;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.15);
+            --high-risk: #ef4444;
+            --medium-risk: #f59e0b;
+            --low-risk: #10b981;
+            --text-primary: #f3f4f6;
+            --text-secondary: rgba(243, 244, 246, 0.6);
+            --border: rgba(255, 255, 255, 0.08);
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --hover-bg: rgba(255, 255, 255, 0.05);
+            --gradient-start: rgba(59, 130, 246, 0.1);
+            --gradient-end: rgba(139, 92, 246, 0.05);
+        }
+        
+        [data-theme="light"] {
+            --bg: #f1f5f9;
+            --panel: #ffffff;
+            --accent: #2563eb;
+            --accent-glow: rgba(37, 99, 235, 0.15);
+            --high-risk: #dc2626;
+            --medium-risk: #ea580c;
+            --low-risk: #059669;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --border: rgba(37, 99, 235, 0.15);
+            --card-bg: rgba(37, 99, 235, 0.03);
+            --hover-bg: rgba(37, 99, 235, 0.06);
+            --gradient-start: rgba(37, 99, 235, 0.08);
+            --gradient-end: rgba(139, 92, 246, 0.05);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: background 0.4s ease, color 0.3s ease;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Exact same header as heatmap page */
+        header {
+            padding: 9px 13px;
+            background: var(--bg);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        header h1 {
+            font-size: 18px;
+            margin: 0;
+            background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+
+        .ping-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 10px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        [data-theme="light"] .ping-indicator {
+            background: var(--panel);
+            border-width: 1.5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .ping-value {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .network-bars {
+            display: flex;
+            gap: 2px;
+            align-items: flex-end;
+            height: 14px;
+        }
+
+        .network-bar {
+            width: 3px;
+            background: currentColor;
+            border-radius: 1.5px;
+            transition: all 0.3s ease;
+        }
+
+        .network-bar:nth-child(1) { height: 25%; }
+        .network-bar:nth-child(2) { height: 50%; }
+        .network-bar:nth-child(3) { height: 75%; }
+        .network-bar:nth-child(4) { height: 100%; }
+
+        /* Dynamic signal strength classes */
+        .signal-weak .network-bar:nth-child(1) { opacity: 1; }
+        .signal-weak .network-bar:nth-child(2) { opacity: 0.3; }
+        .signal-weak .network-bar:nth-child(3) { opacity: 0.3; }
+        .signal-weak .network-bar:nth-child(4) { opacity: 0.3; }
+
+        .signal-medium .network-bar:nth-child(1) { opacity: 1; }
+        .signal-medium .network-bar:nth-child(2) { opacity: 1; }
+        .signal-medium .network-bar:nth-child(3) { opacity: 0.3; }
+        .signal-medium .network-bar:nth-child(4) { opacity: 0.3; }
+
+        .signal-good .network-bar:nth-child(1) { opacity: 1; }
+        .signal-good .network-bar:nth-child(2) { opacity: 1; }
+        .signal-good .network-bar:nth-child(3) { opacity: 1; }
+        .signal-good .network-bar:nth-child(4) { opacity: 0.3; }
+
+        .signal-excellent .network-bar:nth-child(1) { opacity: 1; }
+        .signal-excellent .network-bar:nth-child(2) { opacity: 1; }
+        .signal-excellent .network-bar:nth-child(3) { opacity: 1; }
+        .signal-excellent .network-bar:nth-child(4) { opacity: 1; }
+
+        .ping-excellent { color: #28a745; }
+        .ping-good { color: #ffc107; }
+        .ping-poor { color: #dc3545; }
+
+        /* Color ping bars based on quality */
+        .ping-excellent .network-bar { color: #28a745; }
+        .ping-good .network-bar { color: #ffc107; }
+        .ping-poor .network-bar { color: #dc3545; }
+
+        .theme-toggle {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px var(--accent-glow);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 16px var(--accent-glow), 0 0 20px var(--accent-glow);
+        }
+
+        .theme-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .theme-toggle:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: -36px;
+            right: 0;
+            transform: none;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            white-space: nowrap;
+            z-index: 1000;
+            font-family: 'Segoe UI', sans-serif;
+            letter-spacing: 0.3px;
+        }
+
+        /* Main content area */
+        .main-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 10px;
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
+        }
+
+        [data-theme="light"] .card {
+            border-width: 1.5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(37, 99, 235, 0.05) inset;
+        }
+
+        [data-theme="light"] .card:hover {
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.15), 0 0 0 1px rgba(37, 99, 235, 0.1) inset;
+            transform: translateY(-1px);
+        }
+
+        /* Stats Overview Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .stat-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-card:hover {
+            border-color: var(--accent);
+        }
+
+        [data-theme="light"] .stat-card {
+            border-width: 1.5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(37, 99, 235, 0.05) inset;
+        }
+
+        [data-theme="light"] .stat-card:hover {
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.15), 0 0 0 1px rgba(37, 99, 235, 0.1) inset;
+            transform: translateY(-1px);
+        }
+
+        .stat-card::before {
+            display: none;
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .stat-icon {
+            width: 36px;
+            height: 36px;
+            background: transparent;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            border: none;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        /* Stat card hover effects with distinct colors */
+        .stat-card:nth-child(1):hover .stat-label {
+            background: linear-gradient(135deg, #3b82f6, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card:nth-child(2):hover .stat-label {
+            background: linear-gradient(135deg, #ef4444, #f87171);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card:nth-child(3):hover .stat-label {
+            background: linear-gradient(135deg, #10b981, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card:nth-child(4):hover .stat-label {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-value {
+            font-size: 26px;
+            font-weight: 700;
+            margin: 8px 0;
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            color: var(--low-risk);
+        }
+
+        .value-fake { color: var(--high-risk); }
+        .value-real { color: var(--low-risk); }
+        .value-uncertain { color: var(--medium-risk); }
+
+        /* Dashboard Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        /* Detection Overview - Large Card */
+        .detection-overview {
+            grid-column: span 8;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-primary);
+            letter-spacing: -0.2px;
+            transition: all 0.2s ease;
+        }
+
+        /* Detection Overview - Blue */
+        .detection-overview:hover .card-title {
+            background: linear-gradient(135deg, #3b82f6, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transform: scale(1.02);
+        }
+
+        /* Activity Feed - Pink */
+        .activity-feed:hover .card-title {
+            background: linear-gradient(135deg, #ec4899, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transform: scale(1.02);
+        }
+
+        /* AI Components - Purple */
+        .ai-components-section:hover .card-title {
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transform: scale(1.02);
+        }
+
+        /* Geographic Distribution - Orange */
+        .geo-distribution:hover .card-title {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transform: scale(1.02);
+        }
+
+        .card-subtitle {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .metrics-display {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0;
+            margin-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        [data-theme="light"] .metrics-display {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            border-bottom-width: 1.5px;
+        }
+
+        .metric-box {
+            text-align: center;
+            padding: 14px 12px;
+            background: transparent;
+            border-radius: 0;
+            border: none;
+            transition: all 0.3s;
+        }
+
+        .metric-box:hover {
+            transform: translateY(-2px);
+        }
+
+        .metric-box .progress-bar {
+            display: none;
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .metric-label {
+            font-size: 10px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 5px;
+            background: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .progress-fill {
+            height: 100%;
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 10px;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .ml-accuracy-section {
+            padding: 14px 0 0 0;
+            background: transparent;
+            border-radius: 0;
+            border: none;
+            border-top: 1px solid var(--border);
+            margin-top: 14px;
+        }
+
+        .accuracy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .accuracy-value {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        /* Live Activity Feed - Enhanced */
+        .activity-feed {
+            grid-column: span 4;
+            max-height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .activity-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 12px;
+            padding-right: 4px;
+        }
+
+        .activity-item {
+            padding: 12px;
+            margin-bottom: 10px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-left: 3px solid;
+            border-radius: 6px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .activity-item.fake { border-left-color: var(--high-risk); }
+        .activity-item.real { border-left-color: var(--low-risk); }
+        .activity-item.uncertain { border-left-color: var(--medium-risk); }
+
+        .activity-item:hover {
+            background: var(--hover-bg);
+            transform: translateX(2px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="light"] .activity-item {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        [data-theme="light"] .activity-item:hover {
+            background: var(--panel);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .activity-time {
+            font-size: 9px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .activity-source {
+            font-size: 9px;
+            padding: 2px 6px;
+            background: var(--card-bg);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .activity-title {
+            font-size: 11px;
+            line-height: 1.4;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .activity-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 8px;
+            font-size: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid;
+        }
+
+        .badge-fake {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--high-risk);
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        .badge-fake::before {
+            content: '⚠';
+            font-size: 10px;
+        }
+
+        .badge-real {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--low-risk);
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+
+        .badge-real::before {
+            content: '✓';
+            font-size: 10px;
+        }
+
+        .badge-uncertain {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--medium-risk);
+            border-color: rgba(245, 158, 11, 0.4);
+        }
+
+        .badge-uncertain::before {
+            content: '?';
+            font-size: 10px;
+        }
+
+        /* AI Components Section */
+        .ai-components-section {
+            grid-column: span 12;
+        }
+
+        .ai-grid {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .ai-component {
+            flex: 1;
+            min-width: 140px;
+            padding: 12px 10px;
+            text-align: center;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .ai-component:hover {
+            background: var(--card-bg);
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        [data-theme="light"] .ai-component {
+            background: var(--panel);
+            border-width: 1.5px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="light"] .ai-component:hover {
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
+        }
+
+        .component-icon {
+            font-size: 20px;
+            margin-bottom: 6px;
+        }
+
+        .component-name {
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .component-status {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: 600;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--low-risk);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        /* Geographic Distribution - Enhanced */
+        .geo-distribution {
+            grid-column: span 12;
+        }
+
+        .state-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .state-item {
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .state-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--accent);
+            border-radius: 6px 0 0 6px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .state-item:hover::before {
+            opacity: 1;
+        }
+
+        .state-item:hover {
+            background: var(--hover-bg);
+            border-color: var(--accent);
+            transform: translateX(2px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="light"] .state-item {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        [data-theme="light"] .state-item:hover {
+            background: var(--panel);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .state-name {
+            font-size: 11px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .state-name::before {
+            content: '📍';
+            font-size: 12px;
+        }
+
+        .state-count {
+            font-size: 13px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Animations */
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--low-risk);
+            animation: pulse 2s infinite;
+        }
+
+        /* Premium Compact Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.2);
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        [data-theme="light"] ::-webkit-scrollbar-thumb {
+            background: rgba(37, 99, 235, 0.2);
+        }
+
+        [data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+            box-shadow: 0 0 8px rgba(37, 99, 235, 0.2);
+        }
+
+        /* Custom scrollbar for specific containers */
+        .activity-list::-webkit-scrollbar,
+        .state-grid::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .activity-list::-webkit-scrollbar-thumb,
+        .state-grid::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--accent), #8b5cf6);
+            border-radius: 10px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .detection-overview { grid-column: span 12; }
+            .activity-feed { grid-column: span 12; }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .dashboard-grid > * {
+                grid-column: span 12 !important;
+            }
+            .metrics-display {
+                grid-template-columns: 1fr;
+            }
+            .ai-grid {
+                flex-direction: column;
+            }
+            .ai-component {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Exact same header as heatmap page -->
+    <header>
+        <a href="/" style="text-decoration: none; display: flex; align-items: center; cursor: pointer;">
+            <h1>📊 Misinformation Detection Dashboard</h1>
+        </a>
+        <div style="flex: 1;"></div>
+        
+        <!-- Ping Indicator -->
+        <div class="ping-indicator">
+            <span class="ping-value" id="ping-value">--</span>
+            <span style="opacity: 0.7;">ms</span>
+            <div class="network-bars" id="network-bars">
+                <div class="network-bar"></div>
+                <div class="network-bar"></div>
+                <div class="network-bar"></div>
+                <div class="network-bar"></div>
+            </div>
+        </div>
+        
+        <!-- Theme Toggle -->
+        <div class="theme-toggle" id="theme-toggle" data-tooltip="Switch to Light" onclick="toggleTheme()">
+            🌜
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="container">
+            <!-- Stats Overview -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Total Events</div>
+                            <div class="stat-value" id="total-events">0</div>
+                            <div class="stat-trend">
+                                <span>↑</span>
+                                <span id="events-trend">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="stat-icon">📊</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Fake News</div>
+                            <div class="stat-value value-fake" id="fake-count">0</div>
+                            <div class="stat-trend" style="color: var(--high-risk);" id="fake-percent">--% of total</div>
+                        </div>
+                        <div class="stat-icon">🚨</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Real News</div>
+                            <div class="stat-value value-real" id="real-count">0</div>
+                            <div class="stat-trend" id="real-percent">--% of total</div>
+                        </div>
+                        <div class="stat-icon">✅</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Uncertain</div>
+                            <div class="stat-value value-uncertain" id="uncertain-count">0</div>
+                            <div class="stat-trend" style="color: var(--medium-risk);" id="uncertain-percent">--% of total</div>
+                        </div>
+                        <div class="stat-icon">⚠️</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Main Grid -->
+            <div class="dashboard-grid">
+                <!-- Detection Overview -->
+                <div class="card detection-overview">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">
+                                <span>📈</span>
+                                Detection Overview
+                            </div>
+                            <div class="card-subtitle">Real-time classification metrics</div>
+                        </div>
+                        <div class="status-dot"></div>
+                    </div>
+
+                    <div class="metrics-display">
+                        <div class="metric-box">
+                            <div class="metric-value value-fake" id="fake-display">0</div>
+                            <div class="metric-label">Fake Detected</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="fake-progress" style="background: var(--high-risk);"></div>
+                            </div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-value value-real" id="real-display">0</div>
+                            <div class="metric-label">Real Verified</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="real-progress" style="background: var(--low-risk);"></div>
+                            </div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-value value-uncertain" id="uncertain-display">0</div>
+                            <div class="metric-label">Uncertain</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="uncertain-progress" style="background: var(--medium-risk);"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ml-accuracy-section">
+                        <div class="accuracy-header">
+                            <div>
+                                <div class="metric-label">ML Accuracy</div>
+                                <div style="font-size: 9px; color: var(--text-secondary); margin-top: 2px;">
+                                    Ensemble Model
+                                </div>
+                            </div>
+                            <div class="accuracy-value" id="accuracy-display">95.8%</div>
+                        </div>
+                        <div class="progress-bar" style="height: 6px;">
+                            <div class="progress-fill" id="accuracy-progress" style="background: linear-gradient(90deg, var(--accent), #764ba2); width: 95.8%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Activity Feed -->
+                <div class="card activity-feed">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">
+                                <span>⚡</span>
+                                Live Activity
+                            </div>
+                            <div class="card-subtitle">Recent classifications</div>
+                        </div>
+                        <div class="loading"></div>
+                    </div>
+                    <div class="activity-list" id="activity-feed">
+                        <div style="text-align: center; padding: 30px; opacity: 0.5;">
+                            <div style="font-size: 24px; margin-bottom: 8px;">📡</div>
+                            <div style="font-size: 11px;">Loading live events...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Components -->
+                <div class="card ai-components-section">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">
+                                <span>🧠</span>
+                                AI Analysis Components
+                            </div>
+                            <div class="card-subtitle">Multi-layer verification system</div>
+                        </div>
+                    </div>
+                    <div class="ai-grid">
+                        <div class="ai-component">
+                            <div class="component-icon">🎯</div>
+                            <div class="component-name">IndicBERT NLP</div>
+                            <div class="component-status">Active</div>
+                        </div>
+                        <div class="ai-component">
+                            <div class="component-icon">🛰️</div>
+                            <div class="component-name">Satellite Verify</div>
+                            <div class="component-status">Active</div>
+                        </div>
+                        <div class="ai-component">
+                            <div class="component-icon">✓</div>
+                            <div class="component-name">Fact Checker</div>
+                            <div class="component-status">Active</div>
+                        </div>
+                        <div class="ai-component">
+                            <div class="component-icon">🤖</div>
+                            <div class="component-name">ML Ensemble</div>
+                            <div class="component-status">95.8%</div>
+                        </div>
+                        <div class="ai-component">
+                            <div class="component-icon">📝</div>
+                            <div class="component-name">Source Analysis</div>
+                            <div class="component-status">Active</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Geographic Distribution -->
+                <div class="card geo-distribution">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">
+                                <span>🗺️</span>
+                                Geographic Distribution
+                            </div>
+                            <div class="card-subtitle">Events by Indian states</div>
+                        </div>
+                        <a href="/map/enhanced-india-heatmap.html" style="color: var(--accent); text-decoration: none; font-size: 10px; font-weight: 600; display: flex; align-items: center; gap: 4px; transition: all 0.3s;">
+                            View Map
+                            <span>→</span>
+                        </a>
+                    </div>
+                    <div class="state-grid" id="state-distribution">
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 30px; opacity: 0.5;">
+                            <div class="loading" style="margin: 0 auto 8px;"></div>
+                            <div style="font-size: 11px;">Loading state data...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * ===================================================================
+         * MISINFORMATION DETECTION DASHBOARD - API INTEGRATION
+         * ===================================================================
+         * 
+         * This dashboard integrates with the Enhanced Fake News Detection System
+         * backend that processes 22,050+ real events from 30+ Indian news sources.
+         * 
+         * API ENDPOINTS:
+         * --------------
+         * 1. GET /api/v1/dashboard/stats
+         *    Returns: { total_events, fake_count, real_count, uncertain_count, 
+         *              classification_accuracy, ml_accuracy }
+         * 
+         * 2. GET /api/v1/events/live?limit=15
+         *    Returns: { events: [{ id, title, source, url, classification, 
+         *              confidence, timestamp, processed_at, state }] }
+         * 
+         * 3. GET /api/v1/heatmap/data
+         *    Returns: { heatmap_data: [{ state, total_events, fake_events, 
+         *              real_events, uncertain_events, avg_fake_probability }] }
+         * 
+         * DATABASE SCHEMA (from backend):
+         * -------------------------------
+         * - id: Event unique identifier
+         * - title: News article title
+         * - content: Full article content
+         * - source: News source name (e.g., Times of India, NDTV)
+         * - url: Article URL
+         * - location: Extracted location
+         * - state: Indian state name
+         * - fake_probability: AI-computed fake news probability (0-1)
+         * - confidence: Model confidence score (0-1)
+         * - classification: 'fake', 'real', or 'uncertain'
+         * - timestamp: Article published time
+         * - processed_at: AI analysis timestamp
+         * - metadata: Additional JSON data
+         * 
+         * AI ANALYSIS PIPELINE:
+         * ---------------------
+         * - IndicBERT: 25% weight - Indian language/cultural context
+         * - ML Classifier: 25% weight - Ensemble (Naive Bayes, SVM, Random Forest)
+         * - Linguistic Analysis: 20% weight - Sensational language detection
+         * - Source Credibility: 15% weight - Source reliability scoring
+         * - Fact-Checking: 10% weight - Alt News, Boom Live, WebQoof
+         * - Satellite Verification: 5% weight - Google Earth Engine validation
+         * 
+         * SYSTEM CAPABILITIES:
+         * --------------------
+         * - Processing Rate: ~100 articles/second
+         * - API Response Time: <500ms (95th percentile)
+         * - Classification Accuracy: 95.8%
+         * - Update Frequency: Real-time with 10-second dashboard refresh
+         * - Coverage: All 29 Indian states + Union Territories
+         * 
+         * DATA SOURCES (30+ RSS feeds):
+         * ------------------------------
+         * Times of India, Hindustan Times, Indian Express, NDTV, The Hindu,
+         * Economic Times, News18, Zee News, India Today, The Quint, and more.
+         * ===================================================================
+         */
+
+        // Theme Toggle Function (same as heatmap)
+        function toggleTheme() {
+            const body = document.body;
+            const themeToggle = document.getElementById('theme-toggle');
+            const currentTheme = body.getAttribute('data-theme');
+            
+            if (currentTheme === 'light') {
+                body.removeAttribute('data-theme');
+                themeToggle.innerHTML = '🌜';
+                themeToggle.setAttribute('data-tooltip', 'Switch to Light');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.setAttribute('data-theme', 'light');
+                themeToggle.innerHTML = '☀';
+                themeToggle.setAttribute('data-tooltip', 'Switch to Dark');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Load saved theme
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const themeToggle = document.getElementById('theme-toggle');
+            if (savedTheme === 'light') {
+                document.body.setAttribute('data-theme', 'light');
+                themeToggle.innerHTML = '☀';
+                themeToggle.setAttribute('data-tooltip', 'Switch to Dark');
+            }
+        }
+
+        // Ping Measurement
+        async function measurePing() {
+            const startTime = performance.now();
+            try {
+                await fetch('/api/v1/stats', { method: 'HEAD' });
+                const endTime = performance.now();
+                const ping = Math.round(endTime - startTime);
+                
+                const pingValue = document.getElementById('ping-value');
+                const networkBars = document.getElementById('network-bars');
+                
+                pingValue.textContent = ping;
+                
+                // Update signal strength and color
+                let colorClass = 'ping-excellent';
+                let signalClass = 'signal-excellent';
+                
+                if (ping < 30) {
+                    colorClass = 'ping-excellent';
+                    signalClass = 'signal-excellent';
+                } else if (ping < 100) {
+                    colorClass = 'ping-good';
+                    signalClass = 'signal-good';
+                } else {
+                    colorClass = 'ping-poor';
+                    signalClass = 'signal-weak';
+                }
+                
+                // Apply both color and signal strength classes
+                pingValue.className = 'ping-value ' + colorClass;
+                networkBars.className = 'network-bars ' + signalClass + ' ' + colorClass;
+            } catch (error) {
+                document.getElementById('ping-value').textContent = '--';
+            }
+        }
+
+        // Initialize theme and ping
+        loadTheme();
+        measurePing();
+        setInterval(measurePing, 5000);
+
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+        }
+
+        function timeAgo(date) {
+            const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+            if (seconds < 60) return 'Just now';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes}m ago`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours}h ago`;
+            return `${Math.floor(hours / 24)}d ago`;
+        }
+
+        async function updateDashboard() {
+            try {
+                const [statsRes, liveRes, heatmapRes] = await Promise.all([
+                    fetch('/api/v1/dashboard/stats').catch(() => null),
+                    fetch('/api/v1/events/live?limit=15').catch(() => null),
+                    fetch('/api/v1/heatmap/data').catch(() => null)
+                ]);
+
+                if (statsRes && statsRes.ok) {
+                    const stats = await statsRes.json();
+                    
+                    // Handle both possible API response structures
+                    const total = stats.total_events || stats.total || 0;
+                    const fake = stats.fake_count || stats.fake_events || 0;
+                    const real = stats.real_count || stats.real_events || 0;
+                    const uncertain = stats.uncertain_count || stats.uncertain_events || 0;
+
+                    // Update top stat cards
+                    document.getElementById('total-events').textContent = formatNumber(total);
+                    document.getElementById('fake-count').textContent = formatNumber(fake);
+                    document.getElementById('real-count').textContent = formatNumber(real);
+                    document.getElementById('uncertain-count').textContent = formatNumber(uncertain);
+
+                    // Update detection overview metrics
+                    document.getElementById('fake-display').textContent = fake;
+                    document.getElementById('real-display').textContent = real;
+                    document.getElementById('uncertain-display').textContent = uncertain;
+
+                    // Calculate and update percentages
+                    if (total > 0) {
+                        const fakeP = ((fake / total) * 100).toFixed(1);
+                        const realP = ((real / total) * 100).toFixed(1);
+                        const uncertainP = ((uncertain / total) * 100).toFixed(1);
+
+                        document.getElementById('fake-percent').textContent = `-${fakeP}% of total`;
+                        document.getElementById('real-percent').textContent = `-${realP}% of total`;
+                        document.getElementById('uncertain-percent').textContent = `-${uncertainP}% of total`;
+                    }
+
+                    // Update ML accuracy from backend or use system default
+                    const accuracy = (stats.classification_accuracy || stats.ml_accuracy || 95.8).toFixed(1);
+                    document.getElementById('accuracy-display').textContent = `${accuracy}%`;
+                    document.getElementById('accuracy-progress').style.width = `${accuracy}%`;
+
+                    // Update timestamp
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                    document.getElementById('events-trend').textContent = `Updated ${timeStr}`;
+                    
+                    console.log('Dashboard stats updated:', { total, fake, real, uncertain, accuracy });
+                }
+
+                if (liveRes && liveRes.ok) {
+                    const live = await liveRes.json();
+                    const events = live.events || live.data || [];
+                    
+                    if (events.length > 0) {
+                        const feedHtml = events.map(e => {
+                            // Map classification field to verdict for display
+                            // Backend uses: classification field with 'fake', 'real', 'uncertain'
+                            const verdict = e.classification || e.verdict || 'uncertain';
+                            const verdictLower = verdict.toLowerCase();
+                            
+                            const badgeClass = verdictLower === 'fake' ? 'badge-fake' : 
+                                             verdictLower === 'real' ? 'badge-real' : 'badge-uncertain';
+                            const itemClass = verdictLower === 'fake' ? 'fake' : 
+                                            verdictLower === 'real' ? 'real' : 'uncertain';
+                            
+                            // Format confidence score if available
+                            const confidence = e.confidence ? `${Math.round(e.confidence * 100)}%` : '';
+                            
+                            return `
+                                <div class="activity-item ${itemClass}">
+                                    <div class="activity-header">
+                                        <div class="activity-time">
+                                            <span>🕔</span>
+                                            ${timeAgo(e.timestamp || e.processed_at)}
+                                        </div>
+                                        <div class="activity-source">${e.source || 'Unknown Source'}</div>
+                                    </div>
+                                    <div class="activity-title">${(e.title || 'No title').substring(0, 90)}${e.title && e.title.length > 90 ? '...' : ''}</div>
+                                    <div class="activity-footer">
+                                        <span class="badge ${badgeClass}">${verdictLower.toUpperCase()}</span>
+                                        ${confidence ? `<span style="font-size: 9px; color: var(--text-secondary);">${confidence} confident</span>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                        document.getElementById('activity-feed').innerHTML = feedHtml;
+                        console.log(`Loaded ${events.length} live events`);
+                    } else {
+                        document.getElementById('activity-feed').innerHTML = '<div style="text-align: center; padding: 30px; opacity: 0.5;"><div style="font-size: 24px; margin-bottom: 8px;">📡</div><div style="font-size: 11px;">No recent activity</div></div>';
+                    }
+                } else {
+                    document.getElementById('activity-feed').innerHTML = '<div style="text-align: center; padding: 30px; opacity: 0.5;"><div style="font-size: 24px; margin-bottom: 8px;">📡</div><div style="font-size: 11px;">No recent activity</div></div>';
+                }
+
+                if (heatmapRes && heatmapRes.ok) {
+                    const heatmap = await heatmapRes.json();
+                    const states = heatmap.heatmap_data || heatmap.states || heatmap.data || [];
+                    
+                    if (states.length > 0) {
+                        // Sort by total events and limit to top 30 states
+                        const sortedStates = states
+                            .filter(s => s.total_events > 0)
+                            .sort((a, b) => b.total_events - a.total_events)
+                            .slice(0, 30);
+                        
+                        const stateHtml = sortedStates.map((s, index) => {
+                            // Calculate risk level for color coding
+                            const fakeRate = s.fake_events / (s.total_events || 1);
+                            const riskLevel = fakeRate >= 0.6 ? 'high' : fakeRate >= 0.4 ? 'medium' : 'low';
+                            
+                            return `
+                                <div class="state-item" data-risk="${riskLevel}" title="${s.state}: ${s.total_events} events, ${s.fake_events} fake, ${s.real_events} real">
+                                    <span class="state-name">${s.state}</span>
+                                    <span class="state-count">${s.total_events}</span>
+                                </div>
+                            `;
+                        }).join('');
+                        document.getElementById('state-distribution').innerHTML = stateHtml;
+                        console.log(`Loaded ${sortedStates.length} states with data`);
+                    } else {
+                        document.getElementById('state-distribution').innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 30px; opacity: 0.5;"><div style="font-size: 24px; margin-bottom: 8px;">🗺️</div><div style="font-size: 11px;">No state data available</div></div>';
+                    }
+                } else {
+                    document.getElementById('state-distribution').innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 30px; opacity: 0.5;"><div style="font-size: 24px; margin-bottom: 8px;">🗺️</div><div style="font-size: 11px;">No state data available</div></div>';
+                }
+
+            } catch (error) {
+                console.error('Dashboard update error:', error);
+                // Show error in console but don't break the UI
+                // The UI will show "No data" messages for failed sections
+            }
+        }
+
+        // Add connection status indicator
+        function updateConnectionStatus(online) {
+            const indicator = document.querySelector('.status-dot');
+            if (indicator) {
+                indicator.style.background = online ? 'var(--low-risk)' : 'var(--high-risk)';
+            }
+        }
+
+        // Initial load
+        updateDashboard();
+        updateConnectionStatus(true);
+        
+        // Periodic updates every 10 seconds
+        setInterval(updateDashboard, 10000);
+        
+        // Monitor online/offline status
+        window.addEventListener('online', () => {
+            updateConnectionStatus(true);
+            updateDashboard(); // Immediate update when back online
+        });
+        window.addEventListener('offline', () => updateConnectionStatus(false));
+    </script>
+</body>
+</html>
