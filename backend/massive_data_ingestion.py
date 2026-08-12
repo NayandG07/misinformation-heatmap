@@ -118,28 +118,25 @@ def fetch_single_rss_source_enhanced(source: Dict) -> List[Dict]:
     return events
 
 async def fetch_massive_rss_data():
-    """Fetch massive amounts of data from all sources"""
+    """Fetch massive amounts of data from all sources without blocking the event loop"""
     events = []
     
     logger.info(f"📡 Starting massive data ingestion from {len(MASSIVE_RSS_SOURCES)} RSS sources")
     
-    # Use conservative ThreadPoolExecutor to prevent threading overhead / RAM bloat
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        # Submit all RSS fetch tasks
-        future_to_source = {
-            executor.submit(fetch_single_rss_source_enhanced, source): source 
-            for source in MASSIVE_RSS_SOURCES
-        }
+    # Use asyncio.to_thread to run synchronous fetching without blocking the event loop
+    tasks = []
+    for source in MASSIVE_RSS_SOURCES:
+        tasks.append(asyncio.to_thread(fetch_single_rss_source_enhanced, source))
         
-        # Collect results as they complete
-        for future in as_completed(future_to_source, timeout=60):
-            source = future_to_source[future]
-            try:
-                source_events = future.result()
-                events.extend(source_events)
-                logger.info(f"✅ {source['name']}: {len(source_events)} articles")
-            except Exception as e:
-                logger.error(f"❌ {source['name']} failed: {e}")
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    for i, result in enumerate(results):
+        source = MASSIVE_RSS_SOURCES[i]
+        if isinstance(result, Exception):
+            logger.error(f"❌ {source['name']} failed: {result}")
+        else:
+            events.extend(result)
+            logger.info(f"✅ {source['name']}: {len(result)} articles")
     
     logger.info(f"📊 RSS FETCH COMPLETE: {len(events)} real articles from {len(MASSIVE_RSS_SOURCES)} sources")
     
@@ -174,19 +171,22 @@ async def high_volume_processing_loop():
             for i in range(0, len(events), batch_size):
                 batch = events[i:i + batch_size]
                 
-                # Process batch concurrently
-                tasks = []
+                # Process batch sequentially with sleep to yield to FastAPI event loop
+                batch_results = []
                 for event in batch:
-                    task = process_event_with_fake_news_detection(event)
-                    tasks.append(task)
-                
-                # Wait for batch to complete
-                batch_results = await asyncio.gather(*tasks, return_exceptions=True)
+                    # Crucial: Yield control to the event loop so the API can serve HTTP requests
+                    await asyncio.sleep(0.05)
+                    try:
+                        result = await process_event_with_fake_news_detection(event)
+                        batch_results.append(result)
+                    except Exception as e:
+                        logger.error(f"Event processing failed: {e}")
                 
                 # Store successful results
                 for result in batch_results:
                     if isinstance(result, dict):
-                        store_event_in_database(result)
+                        # Use asyncio.to_thread for database write to prevent blocking
+                        await asyncio.to_thread(store_event_in_database, result)
                         processed_events += 1
                         processed_count += 1
                 

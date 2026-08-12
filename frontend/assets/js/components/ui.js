@@ -243,152 +243,112 @@ function createDetailBadge(text, colorClass) {
  * @param {object} detail
  */
 export function populateEventDetailModal(detail = {}) {
-  const classification = detail.classification || 'unknown';
-  const badgeClass = badgeClassForClassification(classification);
+  // Update Subtitle
+  const subtitle = `${detail.stateText || 'Unknown Location'} • ${detail.timeText || ''}`;
+  setText('#event-detail-subtitle', subtitle);
 
-  const badgesContainer = document.getElementById('event-detail-badges');
-  if (badgesContainer) {
-    const badges = [createDetailBadge(classificationLabel(classification), badgeClass)];
-    if (detail.hasSource) {
-      badges.push(createDetailBadge(detail.sourceText, 'border-blue-200 bg-blue-50 text-blue-700'));
-    }
-    if (detail.hasState) {
-      badges.push(createDetailBadge(detail.stateText, 'border-purple-200 bg-purple-50 text-purple-700'));
-    }
-    if (detail.hasTimestamp) {
-      badges.push(createDetailBadge(detail.timeText, 'border-slate-200 bg-slate-50 text-slate-700'));
-    }
-    replaceChildren(badgesContainer, badges);
-  }
-
+  // Update Title
   setText('#event-detail-title', detail.titleText || 'Untitled event');
 
   const contentContainer = document.getElementById('event-detail-content');
-  if (contentContainer) {
-    const bodyText = toPlainText(detail.bodyText, '');
-    const ml = detail.mlParsed;
-    const fc = detail.factParsed;
-    const hasContent = Boolean(bodyText || ml || fc);
-    contentContainer.classList.toggle('hidden', !hasContent);
-    
-    const elements = [];
+  if (!contentContainer) return;
 
-    // ─── AI Analysis Card ───────────────────────────────────
-    if (ml && typeof ml === 'object') {
-      const prediction = (ml.prediction || '').toLowerCase();
-      const confidence = ml.confidence ?? ml.fake_probability ?? 0;
-      const confPct = Math.round(confidence * 100);
-      const isFake = prediction === 'fake';
-      
-      // Color scheme based on prediction
-      const borderColor = isFake 
-        ? 'border-red-200' 
-        : 'border-emerald-200';
-      const bgColor = isFake 
-        ? 'bg-gradient-to-br from-red-50 to-rose-50/50' 
-        : 'bg-gradient-to-br from-emerald-50 to-green-50/50';
-      const verdictBg = isFake 
-        ? 'bg-red-600' 
-        : 'bg-emerald-600';
-      const verdictText = isFake 
-        ? 'Likely Misinformation' 
-        : 'Likely Authentic';
-      const barBg = isFake 
-        ? 'bg-red-500' 
-        : 'bg-emerald-500';
-      const barTrack = isFake 
-        ? 'bg-red-100' 
-        : 'bg-emerald-100';
+  const elements = [];
+  const ml = detail.mlParsed;
+  const fc = detail.factParsed;
+  const bodyText = toPlainText(detail.bodyText, '');
 
-      const aiCard = createElement('div', { className: `mb-4 rounded-xl border ${borderColor} ${bgColor} p-4` }, [
-        // Header row: icon + label
+  // Generate Summary Box
+  const isMisinfo = (ml && ml.prediction === 'fake') || (fc && ['false', 'misleading'].includes((fc.verdict || '').toLowerCase()));
+  
+  let summaryText = 'No specific summary available.';
+  if (fc && fc.details && fc.details !== 'No matching fact-checks found') {
+    summaryText = `Fact check indicates: ${fc.details}`;
+  } else if (isMisinfo) {
+    summaryText = `Claims made in this article are potentially misleading or unverified.`;
+  } else if (bodyText) {
+    // Truncate body text to a single sentence for summary
+    const firstSentence = bodyText.split(/(?<=[.!?])\s+/)[0];
+    summaryText = firstSentence || 'No summary available.';
+  }
+
+  elements.push(createElement('div', { className: 'rounded-xl border border-zinc-700 bg-zinc-800/30 p-4' }, [
+    createElement('p', { className: 'text-sm font-bold text-white mb-2', text: 'Summary' }),
+    createElement('p', { className: 'text-sm text-zinc-300 leading-relaxed', text: summaryText })
+  ]));
+
+  // Why is it misinformation section (Split View)
+  elements.push(createElement('div', { className: 'mt-2' }, [
+    createElement('h3', { className: 'text-sm font-bold text-white mb-4', text: 'Why is it misinformation?' }),
+    createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' }, [
+      // False Claim (Red)
+      createElement('div', { className: 'rounded-xl border border-red-900/50 bg-[#251515] p-4 flex flex-col' }, [
         createElement('div', { className: 'flex items-center gap-2 mb-3' }, [
-          createElement('div', { className: 'flex h-5 w-5 items-center justify-center rounded-md bg-slate-900 text-[9px] font-bold text-white', text: 'AI' }),
-          createElement('span', { className: 'text-[10px] font-bold text-slate-500 uppercase tracking-wider', text: 'AI Analysis' })
+          createElement('div', { className: 'h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' }),
+          createElement('span', { className: 'text-[13px] font-bold text-red-400', text: 'False Claim' })
         ]),
-        // Verdict badge
-        createElement('div', { className: 'mb-3' }, [
-          createElement('span', { className: `inline-flex items-center gap-1.5 rounded-full ${verdictBg} px-3 py-1 text-xs font-bold text-white shadow-sm`, text: verdictText })
+        createElement('p', { className: 'text-sm text-red-200/90 leading-relaxed italic', text: `"${detail.titleText}"` })
+      ]),
+      // Actual Fact (Green)
+      createElement('div', { className: 'rounded-xl border border-emerald-900/50 bg-[#14231a] p-4 flex flex-col' }, [
+        createElement('div', { className: 'flex items-center gap-2 mb-3' }, [
+          createElement('div', { className: 'h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' }),
+          createElement('span', { className: 'text-[13px] font-bold text-emerald-400', text: 'Actual Fact' })
         ]),
-        // Confidence bar
-        createElement('div', { className: 'flex items-center gap-3' }, [
-          createElement('span', { className: 'text-[11px] font-bold text-slate-600 shrink-0', text: 'Confidence' }),
-          createElement('div', { className: `flex-1 h-2 rounded-full ${barTrack} overflow-hidden` }, [
-            createElement('div', { className: `h-full rounded-full ${barBg} transition-all duration-500`, style: `width: ${confPct}%` })
-          ]),
-          createElement('span', { className: 'text-[11px] font-extrabold text-slate-800 tabular-nums shrink-0', text: `${confPct}%` })
-        ])
-      ]);
-      elements.push(aiCard);
+        createElement('p', { className: 'text-sm text-emerald-200/90 leading-relaxed', text: (fc && fc.details && fc.details !== 'No matching fact-checks found') ? fc.details : 'Review the verified sources for actual facts and full context.' })
+      ])
+    ])
+  ]));
+
+  // Verified Sources
+  if (fc && fc.source) {
+    elements.push(createElement('div', { className: 'mt-2 rounded-xl border border-zinc-700 bg-zinc-800/30 p-4' }, [
+      createElement('div', { className: 'flex items-center gap-2 mb-4' }, [
+        createElement('svg', { className: 'h-4 w-4 text-zinc-400', attrs: { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' } }, [
+          createElement('path', { attrs: { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' } })
+        ]),
+        createElement('span', { className: 'text-[13px] font-bold text-white', text: 'Verified Sources' })
+      ]),
+      createElement('ul', { className: 'list-disc list-inside space-y-2 marker:text-blue-500' }, [
+        createElement('li', { className: 'text-sm text-blue-400', text: fc.source })
+      ])
+    ]));
+  }
+
+  replaceChildren(contentContainer, elements);
+
+  // Badges (Risk and Source)
+  const badgesContainer = document.getElementById('event-detail-badges');
+  if (badgesContainer) {
+    const badges = [];
+    const classification = detail.classification || 'unknown';
+    
+    // Risk Badge (Brownish border matching mockup)
+    let riskColor = 'border-amber-700/50 text-amber-500';
+    let riskText = 'Medium Risk';
+    if (classification === 'fake') {
+      riskColor = 'border-red-700/50 text-red-500';
+      riskText = 'High Risk';
     }
-
-    // ─── Fact Check Card ────────────────────────────────────
-    if (fc && typeof fc === 'object') {
-      const checked = fc.checked === true;
-      const verdict = (fc.verdict || 'unknown').toLowerCase();
-      const fcSource = fc.source || null;
-      const fcDetails = fc.details || '';
-      
-      if (checked && verdict !== 'unknown') {
-        // Active fact-check found
-        const verdictColors = {
-          'false':      { border: 'border-red-200', bg: 'bg-gradient-to-br from-red-50 to-orange-50/30', badge: 'bg-red-600', label: 'FALSE' },
-          'misleading': { border: 'border-amber-200', bg: 'bg-gradient-to-br from-amber-50 to-yellow-50/30', badge: 'bg-amber-600', label: 'MISLEADING' },
-          'true':       { border: 'border-emerald-200', bg: 'bg-gradient-to-br from-emerald-50 to-green-50/30', badge: 'bg-emerald-600', label: 'TRUE' },
-        };
-        const style = verdictColors[verdict] || verdictColors['false'];
-
-        const fcChildren = [
-          // Header
-          createElement('div', { className: 'flex items-center gap-2 mb-3' }, [
-            createElement('div', { className: 'flex h-5 w-5 items-center justify-center rounded-md bg-blue-600 text-[9px] font-bold text-white', text: '✓' }),
-            createElement('span', { className: 'text-[10px] font-bold text-slate-500 uppercase tracking-wider', text: 'Fact Check' })
-          ]),
-          // Verdict badge
-          createElement('div', { className: 'mb-2' }, [
-            createElement('span', { className: `inline-flex items-center rounded-full ${style.badge} px-3 py-1 text-xs font-bold text-white shadow-sm`, text: style.label })
-          ])
-        ];
-
-        // Source attribution
-        if (fcSource) {
-          fcChildren.push(
-            createElement('p', { className: 'text-[11px] text-slate-500 mb-1.5' }, [
-              createElement('span', { className: 'font-bold', text: 'Source: ' }),
-              createElement('span', { className: 'text-blue-700 font-bold', text: fcSource })
-            ])
-          );
-        }
-
-        // Details
-        if (fcDetails && fcDetails !== 'No matching fact-checks found') {
-          fcChildren.push(
-            createElement('p', { className: 'text-sm text-slate-600 leading-relaxed', text: fcDetails })
-          );
-        }
-
-        elements.push(createElement('div', { className: `mb-4 rounded-xl border ${style.border} ${style.bg} p-4` }, fcChildren));
-      } else {
-        // No fact-check match
-        elements.push(createElement('div', { className: 'mb-4 rounded-xl border border-slate-200 bg-slate-50/50 p-4' }, [
-          createElement('div', { className: 'flex items-center gap-2' }, [
-            createElement('div', { className: 'flex h-5 w-5 items-center justify-center rounded-md bg-slate-400 text-[9px] font-bold text-white', text: '?' }),
-            createElement('span', { className: 'text-[10px] font-bold text-slate-400 uppercase tracking-wider', text: 'Fact Check' })
-          ]),
-          createElement('p', { className: 'mt-2 text-sm text-slate-400 italic', text: 'No matching fact-checks found for this article.' })
-        ]));
-      }
-    }
-
-    // ─── Article Excerpt ────────────────────────────────────
-    if (bodyText) {
-      elements.push(createElement('div', { className: 'rounded-xl border border-slate-200/60 bg-white/60 p-4' }, [
-        createElement('p', { className: 'text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2', text: 'Article excerpt' }),
-        createElement('p', { className: 'whitespace-pre-wrap text-sm leading-relaxed text-slate-600', text: bodyText })
-      ]));
+    else if (classification === 'real') {
+      riskColor = 'border-emerald-700/50 text-emerald-500';
+      riskText = 'Low Risk';
     }
     
-    replaceChildren(contentContainer, elements);
+    badges.push(createElement('span', { 
+      className: `inline-flex w-fit rounded-md border ${riskColor} bg-transparent px-2.5 py-1 text-[11px] font-bold`, 
+      text: riskText
+    }));
+
+    // Source Badge (Bluish border matching mockup)
+    if (detail.hasSource) {
+      badges.push(createElement('span', { 
+        className: 'inline-flex w-fit rounded-md border border-indigo-700/50 bg-transparent px-2.5 py-1 text-[11px] font-bold text-indigo-400', 
+        text: detail.sourceText 
+      }));
+    }
+    
+    replaceChildren(badgesContainer, badges);
   }
 
   const linkBtn = document.getElementById('event-detail-link');

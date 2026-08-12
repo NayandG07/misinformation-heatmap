@@ -11,7 +11,9 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'frontend/index.html'),
         dashboard: resolve(__dirname, 'frontend/dashboard.html'),
-        heatmap: resolve(__dirname, 'frontend/heatmap.html')
+        heatmap: resolve(__dirname, 'frontend/heatmap.html'),
+        'map/enhanced-india-heatmap': resolve(__dirname, 'frontend/map/enhanced-india-heatmap.html'),
+        'map/interactive-india-map': resolve(__dirname, 'frontend/map/interactive-india-map.html')
       }
     }
   },

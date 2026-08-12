@@ -634,54 +634,59 @@
         display: none !important;
       }
     }
-
-    #event-detail-card {
-      border: 1.5px solid transparent !important;
-      background: linear-gradient(to bottom, #fffdf4, #fffdf4) padding-box, 
-                  linear-gradient(135deg, rgba(255, 153, 51, 0.4), rgba(0, 0, 128, 0.15), rgba(19, 136, 8, 0.4)) border-box !important;
-    }
   </style>
+
   <div id="heatmap-tooltip"
       class="pointer-events-none fixed z-[60] opacity-0 invisible transition-all duration-200 max-w-xs rounded-xl border border-slate-800 bg-slate-950/95 px-4 py-3 text-[11px] font-semibold leading-relaxed text-white shadow-2xl backdrop-blur-md"
       role="status" aria-hidden="true"></div>
 
-  <!-- Event Details Modal -->
+  <!-- Event Details Modal (Dark Theme Redesign) -->
   <div id="event-detail-modal"
     class="fixed inset-0 z-[200] flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300"
     role="dialog" aria-modal="true" aria-labelledby="event-detail-title" aria-hidden="true">
-    <div class="absolute inset-0 bg-slate-950/40 backdrop-blur-sm" id="event-detail-overlay"></div>
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="event-detail-overlay"></div>
     <div
-      class="relative w-full max-w-2xl scale-95 transform rounded-3xl bg-[#fffdf4] shadow-2xl transition-transform duration-300"
-      style="border: 1.5px solid transparent !important; background: linear-gradient(to bottom, #fffdf4, #fffdf4) padding-box, linear-gradient(135deg, rgba(255, 153, 51, 0.4), rgba(0, 0, 128, 0.15), rgba(19, 136, 8, 0.4)) border-box !important;"
+      class="relative w-full max-w-4xl scale-95 transform rounded-2xl bg-[#18181b] border border-zinc-800 shadow-2xl transition-transform duration-300"
       id="event-detail-card">
-      <div class="p-6 sm:p-8">
-        <div class="flex items-start justify-between gap-4 mb-4">
-          <div class="flex flex-wrap items-center gap-2" id="event-detail-badges">
-            <!-- Badges injected here -->
+      
+      <!-- Top header strip -->
+      <div class="flex items-center justify-between border-b border-zinc-800 p-4 sm:px-6">
+        <div class="flex items-center gap-3">
+          <!-- Warning Icon -->
+          <svg class="h-6 w-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+          </svg>
+          <div>
+            <h3 class="text-sm font-bold text-zinc-100 leading-tight">Misinformation Alert</h3>
+            <p class="text-[11px] text-zinc-400 mt-0.5" id="event-detail-subtitle">--</p>
           </div>
-          <button type="button" id="event-detail-close" aria-label="Close event details"
-            class="rounded-full bg-slate-100 p-2 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition">
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
+        </div>
+        <button type="button" id="event-detail-close" aria-label="Close event details"
+          class="rounded-full bg-zinc-800/50 p-2 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100 transition">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-4 sm:p-6 lg:p-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
+        <!-- Title -->
+        <h2 class="text-xl sm:text-3xl font-extrabold text-white leading-tight mb-5" id="event-detail-title"></h2>
+
+        <!-- Badges row -->
+        <div class="flex flex-wrap items-center gap-3 mb-8" id="event-detail-badges">
+          <!-- Badges injected here by JS -->
         </div>
 
-        <h2 class="text-xl sm:text-2xl font-extrabold text-slate-950 leading-tight mb-4" id="event-detail-title"></h2>
-
-        <div class="prose prose-sm prose-slate max-w-none max-h-[40vh] overflow-y-auto custom-scrollbar pr-2"
-          id="event-detail-content">
-          <!-- Content injected here -->
+        <!-- Dynamic Content Area -->
+        <div id="event-detail-content" class="flex flex-col gap-6">
+          <!-- Summary, Claim vs Fact, Sources injected here by JS -->
         </div>
 
         <div class="mt-8 flex justify-end">
           <a id="event-detail-link" target="_blank" rel="noopener noreferrer"
-            class="hidden rounded-xl bg-slate-950 px-6 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-slate-800 hover:-translate-y-0.5">
+            class="hidden rounded-lg bg-zinc-100 px-5 py-2.5 text-sm font-bold text-zinc-900 shadow-md transition hover:bg-white">
             Read Full Article
-            <svg class="ml-2 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-            </svg>
           </a>
         </div>
       </div>
