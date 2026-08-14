@@ -179,6 +179,7 @@ Complete documentation is available in the [`docs/`](docs/) folder:
 - **[🔧 Backend Architecture](docs/BACKEND_ARCHITECTURE.md)** - System design and components
 - **[🤖 ML Model Documentation](docs/ML_MODEL_DOCUMENTATION.md)** - AI model specifications
 - **[🛡️ System Overview](docs/SYSTEM_OVERVIEW.md)** - Complete feature overview
+- **[🧪 Experimental Upgrades](docs/EXPERIMENTAL_UPGRADES.md)** - Planned future upgrades for datasets and live fact-checking
 - **[🛠️ Scripts Guide](scripts/README.md)** - Development and deployment scripts
 
 ---
