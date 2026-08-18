@@ -185,40 +185,40 @@ async def get_heatmap_data():
                    SUM(CASE WHEN fake_news_verdict = 'fake' THEN 1 ELSE 0 END) as fake_count,
                    SUM(CASE WHEN fake_news_verdict = 'real' THEN 1 ELSE 0 END) as real_count
             FROM events 
-            WHERE state IS NOT NULL 
-            AND timestamp > datetime('now', '-7 days')
+            WHERE state IS NOT NULL AND state != ''
             GROUP BY state
             ORDER BY event_count DESC
-            LIMIT 40
         """)
         
         results = cursor.fetchall()
         heatmap_data = []
         
         for state, count, avg_confidence, fake_count, real_count in results:
-            # Calculate actual fake news ratio (not AI confidence)
-            fake_ratio = fake_count / count if count > 0 else 0
+            fake_count = fake_count or 0
+            real_count = real_count or 0
+            count = count or 0
             
-            # Only show meaningful colors if there's significant data
-            if count < 50:  # Not enough data for reliable visualization
-                risk_level = "insufficient_data"
-                display_ratio = 0
-            else:
-                display_ratio = fake_ratio
-                if fake_ratio > 0.1:  # More than 10% fake news
+            # Calculate actual fake news ratio
+            fake_ratio = fake_count / count if count > 0 else 0.0
+            display_ratio = fake_ratio
+            
+            if count > 0:
+                if fake_ratio >= 0.20:
                     risk_level = "high"
-                elif fake_ratio > 0.05:  # 5-10% fake news
+                elif fake_ratio >= 0.10:
                     risk_level = "medium"
-                elif fake_ratio > 0.02:  # 2-5% fake news
+                elif fake_ratio >= 0.03:
                     risk_level = "low_medium"
-                else:  # Less than 2% fake news
+                else:
                     risk_level = "low"
+            else:
+                risk_level = "insufficient_data"
             
             heatmap_data.append({
                 "state": state,
                 "event_count": count,
-                "fake_probability": display_ratio,  # Now using actual fake ratio
-                "ai_confidence": round(avg_confidence or 0.0, 3),  # Rounded for smaller payload
+                "fake_probability": round(display_ratio, 4),
+                "ai_confidence": round(avg_confidence or 0.0, 3),
                 "fake_count": fake_count,
                 "real_count": real_count,
                 "fake_ratio": round(fake_ratio, 4),

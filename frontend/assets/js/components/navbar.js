@@ -4,25 +4,16 @@ import { createStatPanel, STATUS_CLASSES } from './ui.js';
 import { mountBottomNavbar } from './bottomNavbar.js';
 
 function createDesktopLink(route, activeRoute) {
-  const active = route.key === activeRoute;
+  const active = route.key === activeRoute || (activeRoute === 'home' && route.key === 'home');
   return createElement('a', {
-    className: `rounded-lg px-3 py-2 text-sm font-bold outline-none transition-all duration-200 hover:bg-slate-100 hover:text-ashoka-blue-600 focus-visible:ring-2 focus-visible:ring-saffron-500 focus-visible:ring-offset-2 ${active ? 'border border-saffron-200 bg-saffron-50 text-saffron-600 shadow-sm' : 'text-slate-600'}`,
+    className: `nav-link ${active ? 'active' : ''}`,
+    style: `display: inline-flex; align-items: center; justify-content: center; height: 38px; padding: 0 16px; font-size: 0.88rem; font-weight: ${active ? '700' : '600'}; color: ${active ? '#E87722' : '#475569'}; background: ${active ? 'rgba(232, 119, 34, 0.1)' : 'transparent'}; border: ${active ? '1px solid rgba(232, 119, 34, 0.3)' : '1px solid transparent'}; border-radius: 10px; text-decoration: none; white-space: nowrap; transition: all 0.2s; cursor: pointer; box-sizing: border-box;`,
     text: route.label,
     attrs: {
       href: route.href,
       ...(active ? { 'aria-current': 'page' } : {})
     }
   });
-}
-
-function createStatusPill(id, initialText) {
-  return createElement('div', {
-    className: `inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold ${STATUS_CLASSES.neutral}`,
-    attrs: { role: 'status', 'aria-live': 'polite', 'data-status-pill': '' }
-  }, [
-    createElement('span', { className: 'h-2 w-2 rounded-full bg-current opacity-80', attrs: { 'aria-hidden': 'true' } }),
-    createElement('span', { attrs: { id }, text: initialText })
-  ]);
 }
 
 function createStatsPopover() {
@@ -62,37 +53,64 @@ function createStatsPopover() {
   ]);
 }
 
+function createStatusPill() {
+  const dot = createElement('span', {
+    className: 'h-2 w-2 rounded-full bg-emerald-500 shrink-0',
+    attrs: { 'data-status-dot': '' }
+  });
+
+  const text = createElement('span', {
+    className: 'text-xs font-bold whitespace-nowrap',
+    attrs: { id: 'heatmap-nav-status' },
+    text: 'Connected'
+  });
+
+  return createElement('div', {
+    className: 'inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 shadow-sm transition-all duration-200 shrink-0',
+    attrs: { 'data-status-pill': '', id: 'navbar-status-pill' }
+  }, [dot, text]);
+}
+
 export function mountNavbar(options = {}) {
   const mount = qs('[data-navbar]');
   if (!mount) return;
   const page = options.page || document.body.dataset.page || 'home';
-  const showStats = true;
-  const statusId = options.statusId || `${page}-nav-status`;
 
   const header = createElement('header', {
-    className: 'fixed top-0 z-40 w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-xl'
+    className: 'fixed top-0 left-0 right-0 z-50 w-full border-b border-slate-200/80 bg-white shadow-sm'
   }, [
     createElement('nav', {
-      className: 'mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:h-20 lg:h-16 sm:px-6 lg:px-8',
+      className: 'flex h-16 w-full items-center justify-between px-6 sm:px-12 lg:px-16',
       attrs: { 'aria-label': 'Primary navigation' }
     }, [
-      createElement('a', {
-        className: 'inline-flex min-w-0 items-center gap-3 rounded-lg text-slate-950 no-underline outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-saffron-500 focus-visible:ring-offset-2',
-        attrs: { href: '/', 'aria-label': 'Misinformation Heatmap home' }
-      }, [
-        createElement('img', {
-          className: 'h-9 w-9 shrink-0 rounded-lg border border-slate-200 object-cover shadow-card sm:h-11 sm:w-11 lg:h-9 lg:w-9',
-          attrs: { src: '/assets/ind.png', alt: 'India logo' }
-        }),
-        createElement('span', { className: 'min-w-0 text-sm font-extrabold leading-tight tracking-tight text-slate-950 sm:text-lg lg:text-base whitespace-nowrap' }, [
-          createElement('span', { className: 'text-slate-950', text: 'Misinformation' }),
-          createElement('span', { className: 'text-india-green-600 ml-1', text: 'Heatmap' })
+      // Leftmost Column: App Name & Logo
+      createElement('div', { className: 'flex flex-1 items-center justify-start' }, [
+        createElement('a', {
+          className: 'inline-flex items-center gap-2.5 rounded-lg text-slate-950 no-underline outline-none transition hover:opacity-90 shrink-0',
+          attrs: { href: '/', 'aria-label': 'Misinformation Heatmap home' }
+        }, [
+          createElement('img', {
+            className: 'h-9 w-9 shrink-0 rounded-lg border border-slate-200 object-cover shadow-sm',
+            attrs: { src: '/assets/ind.png', alt: 'India logo' }
+          }),
+          createElement('span', { className: 'text-base font-extrabold tracking-tight text-slate-950 whitespace-nowrap' }, [
+            createElement('span', { className: 'text-slate-950', text: 'Misinformation' }),
+            createElement('span', { className: 'text-saffron-600 ml-1', text: 'Heatmap' })
+          ])
         ])
       ]),
-      createElement('div', { className: 'hidden items-center gap-1 lg:flex', attrs: { 'data-desktop-nav': '' } }, ROUTES.map((route) => createDesktopLink(route, page))),
-      createElement('div', { className: 'flex items-center gap-3' }, [
+
+      // Center Column: Exactly Centered 3 Middle Routes Group (Home, Dashboard, Heatmap)
+      createElement('div', {
+        className: 'flex flex-1 items-center justify-center gap-2 sm:gap-3',
+        attrs: { 'data-desktop-nav': '' }
+      }, ROUTES.map((route) => createDesktopLink(route, page))),
+
+      // Rightmost Column: Balance & Controls
+      createElement('div', { className: 'flex flex-1 items-center justify-end gap-3' }, [
+        createStatusPill(),
         page === 'heatmap' ? createStatsPopover() : null
-      ])
+      ].filter(Boolean))
     ])
   ]);
 
@@ -106,7 +124,6 @@ export function updateMobileNavStatus(text) {
 }
 
 export function updateStatsPanels(items) {
-  // Desktop specific IDs
   const idMap = {
     'Total Events': '#nav-stat-events',
     'Events': '#nav-stat-events',

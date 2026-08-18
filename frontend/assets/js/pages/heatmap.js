@@ -167,15 +167,6 @@ function updateStatsPopover() {
     { label: 'Last Update', value: timeString },
     { label: 'Accuracy', value: accuracy }
   ]);
-
-  // Populate overall counter bar
-  const fakeCount = numberOrNull(latestStats && latestStats.fake_events) ?? 0;
-  const realCount = numberOrNull(latestStats && latestStats.real_events) ?? 0;
-  const fakeRatio = total > 0 ? ((fakeCount / total) * 100).toFixed(1) : '0.0';
-  setText('#overall-total-events', formatCount(total));
-  setText('#overall-fake-count', formatCount(fakeCount));
-  setText('#overall-real-count', formatCount(realCount));
-  setText('#overall-fake-ratio', `${fakeRatio}%`);
 }
 
 function updateProgressBar(percent) {
@@ -248,7 +239,7 @@ function configureSvg() {
   svgMap.removeAttribute('width');
   svgMap.removeAttribute('height');
   svgMap.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-  const classes = 'h-full max-h-full w-full max-w-full transition-transform duration-100 ease-out origin-center drop-shadow-md will-change-transform';
+  const classes = 'h-full max-h-full w-full max-w-full origin-center';
   svgMap.classList.add(...classes.split(' '));
   svgMap.setAttribute('aria-label', 'India state risk map');
 }
@@ -256,7 +247,7 @@ function configureSvg() {
 function bindMapPaths() {
   qsa('path', svgMap).forEach((path) => {
     const fallbackName = path.getAttribute('name') || path.getAttribute('title') || path.id || 'Map region';
-    const pathClasses = 'heatmap-path cursor-pointer stroke-white outline-none transition-all duration-300 ease-out';
+    const pathClasses = 'heatmap-path cursor-pointer stroke-white outline-none transition-colors duration-200 ease-out';
     path.classList.add(...pathClasses.split(' '));
     path.style.strokeWidth = '0.75';
     path.setAttribute('tabindex', '0');
@@ -270,38 +261,16 @@ function bindMapPaths() {
       }
     });
     path.addEventListener('mouseenter', (event) => {
-      if (!path.classList.contains('selected')) {
-        path.style.stroke = '#FF9933';
-        path.style.strokeWidth = '2.5';
-        path.style.transform = 'translateY(-3px)';
-        path.style.filter = 'drop-shadow(0 6px 8px rgba(0,0,0,0.3))';
-      }
       handleStateHover(event);
     });
     path.addEventListener('mousemove', handleStateHover);
     path.addEventListener('mouseleave', () => {
-      if (!path.classList.contains('selected')) {
-        path.style.stroke = '#ffffff';
-        path.style.strokeWidth = '0.75';
-        path.style.transform = 'none';
-        path.style.filter = 'none';
-      }
       hideTooltip();
     });
     path.addEventListener('focus', (event) => {
-      if (!path.classList.contains('selected')) {
-        path.style.stroke = '#E87722';
-        path.style.transform = 'translateY(-3px)';
-        path.style.filter = 'drop-shadow(0 6px 8px rgba(0,0,0,0.3))';
-      }
       handleStateHover(event);
     });
-    path.addEventListener('blur', (event) => {
-      if (!path.classList.contains('selected')) {
-        path.style.stroke = '#ffffff';
-        path.style.transform = 'none';
-        path.style.filter = 'none';
-      }
+    path.addEventListener('blur', () => {
       hideTooltip();
     });
   });
@@ -392,7 +361,8 @@ function applyHeatmapColors() {
     const risk = riskFromRecord(record || { risk_level: 'insufficient_data' });
     // Use continuous color spectrum based on actual fake ratio
     const ratio = record ? getFakeRatio(record) : null;
-    const fillColor = (ratio !== null && risk.key !== 'insufficient-data')
+    const hasData = record && (getRecordCount(record) || 0) > 0;
+    const fillColor = (ratio !== null && hasData)
       ? riskColorFromRatio(ratio)
       : risk.color;
     path.setAttribute('fill', fillColor);
@@ -424,16 +394,8 @@ function handleStateClick(event) {
   }
   qsa('.selected', svgMap).forEach((element) => {
     element.classList.remove('selected');
-    element.style.strokeWidth = '0.75';
-    element.style.stroke = '#ffffff';
-    element.style.transform = 'none';
-    element.style.filter = 'none';
   });
   path.classList.add('selected');
-  path.style.strokeWidth = '3.5';
-  path.style.stroke = '#FF9933';
-  path.style.transform = 'translateY(-3px)';
-  path.style.filter = 'drop-shadow(0 6px 8px rgba(0,0,0,0.4))';
   selectedStateRecord = record;
   selectedState = stateName;
   mapInteractionActive = true;
@@ -442,7 +404,6 @@ function handleStateClick(event) {
   updateFeeds(true);
 }
 
-
 function clearStateSelection() {
   selectedState = null;
   selectedStateRecord = null;
@@ -450,10 +411,6 @@ function clearStateSelection() {
   if (svgMap) {
     qsa('.selected', svgMap).forEach((element) => {
       element.classList.remove('selected');
-      element.style.strokeWidth = '0.75';
-      element.style.stroke = '#ffffff';
-      element.style.transform = 'none';
-      element.style.filter = 'none';
     });
   }
 
@@ -469,57 +426,106 @@ function handleStateHover(event) {
   showTooltip(event, record, fallbackName);
 }
 
+let currentHoveredStateKey = null;
+
 function showTooltip(event, record, fallbackName) {
   const tooltip = qs('#heatmap-tooltip');
   if (!tooltip) return;
-  const risk = riskFromRecord(record || { risk_level: 'insufficient_data' });
-  const children = [
-    createElement('p', { className: 'font-bold text-white', text: record ? (record.state || record.name) : fallbackName })
-  ];
-  if (record) {
-    const fakeCount = numberOrNull(record.fake_count ?? record.fake_events);
-    const realCount = numberOrNull(record.real_count ?? record.real_events ?? record.verified_count ?? record.verified_events);
-    children.push(
-      createElement('p', { text: `Events: ${formatCount(record.event_count ?? record.total_events ?? record.events)}` }),
-      createElement('p', { text: `Fake News: ${formatCount(fakeCount)}` }),
-      createElement('p', { text: `Verified News: ${formatCount(realCount)}` }),
-      createElement('p', { text: `Fake ratio: ${formatRatioAsPercent(getFakeRatio(record))}` }),
-      createElement('p', { text: `Risk: ${risk.label}` })
-    );
-  } else {
-    children.push(createElement('p', { className: 'text-slate-300', text: 'No live metrics available for this region.' }));
+
+  const stateKey = record ? (record.state || record.name) : fallbackName;
+  if (currentHoveredStateKey !== stateKey) {
+    currentHoveredStateKey = stateKey;
+    const risk = riskFromRecord(record || { risk_level: 'insufficient_data' });
+    const ratio = record ? getFakeRatio(record) : null;
+    const fakeCount = record ? (numberOrNull(record.fake_count ?? record.fake_events) ?? 0) : 0;
+    const realCount = record ? (numberOrNull(record.real_count ?? record.real_events ?? record.verified_count ?? record.verified_events) ?? 0) : 0;
+    const totalCount = record ? (numberOrNull(record.event_count ?? record.total_events ?? record.events) ?? 0) : 0;
+
+    const riskBadgeStyle = {
+      high: 'background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4);',
+      medium: 'background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4);',
+      low: 'background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4);',
+      'insufficient-data': 'background: #1e293b; color: #94a3b8; border: 1px solid #334155;'
+    }[risk.key] || 'background: #1e293b; color: #94a3b8; border: 1px solid #334155;';
+
+    const children = [
+      createElement('div', {
+        style: 'display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 10px;'
+      }, [
+        createElement('h4', {
+          style: 'font-size: 14px; font-weight: 800; color: #ffffff; margin: 0; line-height: 1; letter-spacing: -0.01em;',
+          text: stateKey
+        }),
+        createElement('span', {
+          style: `border-radius: 9999px; padding: 2px 8px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; ${riskBadgeStyle}`,
+          text: risk.label
+        })
+      ])
+    ];
+
+    if (record && totalCount > 0) {
+      children.push(
+        createElement('div', { style: 'display: flex; flex-direction: column; gap: 8px; font-size: 12px;' }, [
+          createElement('div', { style: 'display: flex; align-items: center; justify-content: space-between; color: #cbd5e1;' }, [
+            createElement('span', { text: 'Total Signals' }),
+            createElement('span', { style: 'font-weight: 700; color: #ffffff; font-variant-numeric: tabular-nums;', text: formatCount(totalCount) })
+          ]),
+          createElement('div', { style: 'display: flex; align-items: center; justify-content: space-between; color: #cbd5e1;' }, [
+            createElement('span', { style: 'display: flex; align-items: center; gap: 6px;' }, [
+              createElement('span', { style: 'height: 6px; width: 6px; border-radius: 9999px; background-color: #ef4444; flex-shrink: 0;' }),
+              createElement('span', { text: 'Misinformation' })
+            ]),
+            createElement('span', { style: 'font-weight: 700; color: #f87171; font-variant-numeric: tabular-nums;', text: formatCount(fakeCount) })
+          ]),
+          createElement('div', { style: 'display: flex; align-items: center; justify-content: space-between; color: #cbd5e1;' }, [
+            createElement('span', { style: 'display: flex; align-items: center; gap: 6px;' }, [
+              createElement('span', { style: 'height: 6px; width: 6px; border-radius: 9999px; background-color: #10b981; flex-shrink: 0;' }),
+              createElement('span', { text: 'Verified Reports' })
+            ]),
+            createElement('span', { style: 'font-weight: 700; color: #34d399; font-variant-numeric: tabular-nums;', text: formatCount(realCount) })
+          ]),
+          createElement('div', { style: 'display: flex; align-items: center; justify-content: space-between; color: #cbd5e1; border-top: 1px solid #334155; padding-top: 8px; margin-top: 2px;' }, [
+            createElement('span', { text: 'Fake Risk Ratio' }),
+            createElement('span', { style: 'font-weight: 800; color: #fb923c; font-variant-numeric: tabular-nums;', text: formatRatioAsPercent(ratio) })
+          ])
+        ])
+      );
+    } else {
+      children.push(
+        createElement('p', {
+          style: 'font-size: 12px; color: #94a3b8; line-height: 1.5; font-weight: 500; margin: 0;',
+          text: 'No live telemetry signals registered for this region.'
+        })
+      );
+    }
+
+    replaceChildren(tooltip, children);
   }
 
-  replaceChildren(tooltip, children);
   tooltip.classList.remove('hidden', 'opacity-0', 'invisible');
   tooltip.classList.add('opacity-100', 'visible');
   tooltip.setAttribute('aria-hidden', 'false');
 
-  // Dynamic positioning to prevent clipping
-  const tooltipRect = tooltip.getBoundingClientRect();
+  const tooltipWidth = 260;
+  const tooltipHeight = 175;
   const gap = 15;
   let left = event.clientX + gap;
   let top = event.clientY + gap;
 
-  // Horizontal clamping
-  if (left + tooltipRect.width > window.innerWidth - gap) {
-    left = event.clientX - tooltipRect.width - gap;
+  if (left + tooltipWidth > window.innerWidth - gap) {
+    left = event.clientX - tooltipWidth - gap;
   }
-
-  // Vertical clamping - if near bottom, show above cursor
-  if (top + tooltipRect.height > window.innerHeight - gap) {
-    top = event.clientY - tooltipRect.height - gap;
+  if (top + tooltipHeight > window.innerHeight - gap) {
+    top = event.clientY - tooltipHeight - gap;
   }
-
-  // Ensure it doesn't go off the top/left
   left = Math.max(gap, left);
   top = Math.max(gap, top);
 
-  tooltip.style.left = `${left}px`;
-  tooltip.style.top = `${top}px`;
+  tooltip.style.transform = `translate3d(${left}px, ${top}px, 0)`;
 }
 
 function hideTooltip() {
+  currentHoveredStateKey = null;
   const tooltip = qs('#heatmap-tooltip');
   if (!tooltip) return;
   tooltip.classList.remove('opacity-100', 'visible');
@@ -998,27 +1004,24 @@ function resetZoom() {
   updateTransform();
 }
 
+let rAFTransform = null;
+
 function updateTransform() {
   if (!svgMap) return;
-
-  // Enforce bounds
-  const root = qs('#heatmap-svg-root');
-  if (root) {
-    const rect = root.getBoundingClientRect();
-    const halfW = rect.width / 2;
-    const halfH = rect.height / 2;
-
-    // Calculate allowed movement based on zoom
-    // We want to keep the map somewhat visible at all times
-    const maxShiftX = halfW * currentZoom + MAP_BOUNDS_PADDING;
-    const maxShiftY = halfH * currentZoom + MAP_BOUNDS_PADDING;
-
-    currentX = Math.max(-maxShiftX, Math.min(maxShiftX, currentX));
-    currentY = Math.max(-maxShiftY, Math.min(maxShiftY, currentY));
-  }
-
-  svgMap.style.transform = `translate(${currentX}px, ${currentY}px) scale(${currentZoom})`;
-  // setText('#heatmap-zoom-level', `${Math.round(currentZoom * 100)}%`);
+  if (rAFTransform) cancelAnimationFrame(rAFTransform);
+  rAFTransform = requestAnimationFrame(() => {
+    const root = qs('#heatmap-svg-root');
+    if (root) {
+      const rect = root.getBoundingClientRect();
+      const halfW = rect.width / 2;
+      const halfH = rect.height / 2;
+      const maxShiftX = halfW * currentZoom + MAP_BOUNDS_PADDING;
+      const maxShiftY = halfH * currentZoom + MAP_BOUNDS_PADDING;
+      currentX = Math.max(-maxShiftX, Math.min(maxShiftX, currentX));
+      currentY = Math.max(-maxShiftY, Math.min(maxShiftY, currentY));
+    }
+    svgMap.style.transform = `translate3d(${currentX.toFixed(2)}px, ${currentY.toFixed(2)}px, 0) scale(${currentZoom.toFixed(3)})`;
+  });
 }
 
 function handleHeatmapShortcuts(event) {
