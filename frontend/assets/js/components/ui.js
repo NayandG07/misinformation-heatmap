@@ -9,6 +9,13 @@ export const STATUS_CLASSES = {
   neutral: 'border-slate-200 bg-slate-50 text-slate-600'
 };
 
+export const DOT_CLASSES = {
+  good: 'bg-emerald-500',
+  warn: 'bg-amber-500 animate-pulse',
+  bad: 'bg-red-500 animate-pulse',
+  neutral: 'bg-slate-400 animate-pulse'
+};
+
 export function updateStatusText(id, text, state = 'neutral') {
   const element = document.getElementById(id);
   if (!element) return;
@@ -22,6 +29,18 @@ export function updateStatusText(id, text, state = 'neutral') {
     STATUS_CLASSES[state in STATUS_CLASSES ? state : 'neutral'].split(' ').forEach((item) => {
       if (item) pill.classList.add(item);
     });
+
+    const dot = pill.querySelector('[data-status-dot]');
+    if (dot) {
+      Object.values(DOT_CLASSES).forEach((className) => {
+        className.split(' ').forEach((item) => {
+          if (item) dot.classList.remove(item);
+        });
+      });
+      DOT_CLASSES[state in DOT_CLASSES ? state : 'neutral'].split(' ').forEach((item) => {
+        if (item) dot.classList.add(item);
+      });
+    }
   }
   setText(element, text);
 }

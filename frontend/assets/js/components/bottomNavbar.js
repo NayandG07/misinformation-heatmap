@@ -34,7 +34,7 @@ export function mountBottomNavbar(options = {}) {
   const { activeRoute } = options;
 
   const container = createElement('div', {
-    className: 'fixed bottom-6 left-1/2 z-[60] -translate-x-1/2 transform-gpu lg:hidden flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/90 p-2 shadow-lg backdrop-blur-2xl transition-all duration-500 hover:scale-[1.02]',
+    className: 'fixed bottom-6 left-1/2 z-[60] -translate-x-1/2 transform-gpu lg:hidden flex items-center gap-2 rounded-full border border-slate-200/80 bg-white p-2 shadow-lg transition-all duration-300 hover:scale-[1.02]',
     attrs: { id: 'bottom-premium-nav' }
   });
 

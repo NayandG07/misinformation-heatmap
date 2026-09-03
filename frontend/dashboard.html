@@ -183,59 +183,205 @@
             animation: pulse 2s infinite;
         }
 
-        /* ─── MAIN LAYOUT ─── */
+        /* ─── MAIN LAYOUT & HEADER BANNER CARD ─── */
         .main { position: relative; z-index: 1; padding: 2rem; max-width: 1400px; margin: 0 auto; }
-        .page-header { margin-bottom: 2rem; }
-        .page-title { font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800; color: var(--text-primary); }
-        .page-sub { color: var(--text-muted); font-size: 0.88rem; margin-top: 4px; }
-        .last-updated { color: var(--text-muted); font-size: 0.78rem; margin-top: 2px; }
-
-        /* ─── STAT CARDS ─── */
-        .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.25rem; margin-bottom: 2rem; }
-        .stat-card {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: var(--radius); padding: 1.5rem; position: relative;
-            overflow: hidden; transition: all 0.25s; box-shadow: var(--shadow-sm);
+        
+        .header-banner-card {
+            background: linear-gradient(135deg, #FFFFFF 0%, #FAFAF7 100%);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 20px;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5rem;
+            margin-top: 3.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
         }
-        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-        .stat-card.total::before  { background: var(--blue); }
-        .stat-card.fake::before   { background: var(--red); }
-        .stat-card.real::before   { background: var(--green); }
-        .stat-card.uncertain::before { background: var(--amber); }
-        .stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-        .stat-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem; }
-        .stat-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); }
-        .stat-icon { font-size: 1.4rem; }
-        .stat-value { font-family: 'Outfit', sans-serif; font-size: 2.4rem; font-weight: 900; line-height: 1; }
-        .stat-card.total  .stat-value { color: var(--blue); }
-        .stat-card.fake   .stat-value { color: var(--red); }
-        .stat-card.real   .stat-value { color: var(--green); }
-        .stat-card.uncertain .stat-value { color: var(--amber); }
-        .stat-desc { font-size: 0.78rem; color: var(--text-muted); margin-top: 6px; }
-        .stat-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 1rem; overflow: hidden; }
-        .stat-bar-fill { height: 100%; border-radius: 2px; transition: width 1s ease; width: 0; }
-        .stat-card.total  .stat-bar-fill { background: var(--blue); }
-        .stat-card.fake   .stat-bar-fill { background: var(--red); }
-        .stat-card.real   .stat-bar-fill { background: var(--green); }
-        .stat-card.uncertain .stat-bar-fill { background: var(--amber); }
 
-        /* ─── GRID ROWS ─── */
+        .header-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: var(--saffron-dark);
+            background: rgba(232, 119, 34, 0.08);
+            border: 1px solid rgba(232, 119, 34, 0.2);
+            border-radius: 12px;
+            padding: 3px 10px;
+            margin-bottom: 0.3rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .header-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .header-sub {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            margin-top: 4px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .last-updated-badge {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 6px 14px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+
+        .header-refresh-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #E87722 0%, #c4601a 100%);
+            color: #FFFFFF;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.84rem;
+            font-weight: 700;
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 14px rgba(232, 119, 34, 0.25);
+            white-space: nowrap;
+        }
+        .header-refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(232, 119, 34, 0.35);
+        }
+        .header-refresh-btn:active {
+            transform: translateY(0);
+        }
+        .header-refresh-btn svg {
+            transition: transform 0.4s ease;
+        }
+        .header-refresh-btn.spinning svg {
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* ─── STAT CARDS (HIGH UI/UX UPGRADE) ─── */
+        .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.25rem; margin-bottom: 2rem; }
+        
+        .stat-card {
+            background: #FFFFFF;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 20px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3.5px; }
+        .stat-card.total::before  { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+        .stat-card.fake::before   { background: linear-gradient(90deg, #dc2626, #ef4444); }
+        .stat-card.real::before   { background: linear-gradient(90deg, #138808, #22c55e); }
+        .stat-card.uncertain::before { background: linear-gradient(90deg, #d97706, #f59e0b); }
+        
+        .stat-card:hover {
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.08);
+            transform: translateY(-5px);
+            cursor: pointer;
+        }
+
+        .stat-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+        
+        .stat-label {
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+        }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            transition: transform 0.3s ease;
+        }
+        .stat-card:hover .stat-icon { transform: scale(1.1); }
+
+        .stat-card.total .stat-icon     { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
+        .stat-card.fake .stat-icon      { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
+        .stat-card.real .stat-icon      { background: rgba(19, 136, 8, 0.1); color: #138808; }
+        .stat-card.uncertain .stat-icon { background: rgba(217, 119, 6, 0.1); color: #d97706; }
+
+        .stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.4rem;
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: -0.5px;
+        }
+        .stat-card.total  .stat-value { color: #2563eb; }
+        .stat-card.fake   .stat-value { color: #dc2626; }
+        .stat-card.real   .stat-value { color: #138808; }
+        .stat-card.uncertain .stat-value { color: #d97706; }
+
+        .stat-desc { font-size: 0.78rem; font-weight: 500; color: var(--text-muted); margin-top: 6px; }
+        .stat-bar { height: 5px; background: rgba(0,0,0,0.05); border-radius: 4px; margin-top: 1rem; overflow: hidden; }
+        .stat-bar-fill { height: 100%; border-radius: 4px; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); width: 0; }
+        .stat-card.total  .stat-bar-fill { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+        .stat-card.fake   .stat-bar-fill { background: linear-gradient(90deg, #dc2626, #ef4444); }
+        .stat-card.real   .stat-bar-fill { background: linear-gradient(90deg, #138808, #22c55e); }
+        .stat-card.uncertain .stat-bar-fill { background: linear-gradient(90deg, #d97706, #f59e0b); }
+
+        /* ─── GRID ROWS & PANELS ─── */
         .row { display: grid; gap: 1.25rem; margin-bottom: 1.25rem; }
-        .row-2 { grid-template-columns: 1fr 3fr; }
+        .row-2 { grid-template-columns: 1fr 1.4fr; }
         .row-3 { grid-template-columns: 1fr 1fr 1fr; }
 
         .panel {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm);
-            display: flex; flex-direction: column;
+            background: #FFFFFF;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+            transition: box-shadow 0.3s;
+            cursor: pointer;
         }
         .panel-header {
             display: flex; align-items: center; justify-content: space-between;
             padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border);
+            background: #FAFAF7;
         }
-        .panel-title { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
-        .panel-sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
-        .panel-badge { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); background: var(--bg); border: 1px solid var(--border); padding: 3px 10px; border-radius: 10px; }
+        .panel-title { font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 800; color: var(--text-primary); }
+        .panel-sub { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+        .panel-badge { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); background: var(--bg); border: 1px solid var(--border); padding: 3px 10px; border-radius: 10px; }
         .panel-body { padding: 1.5rem; flex: 1; }
 
         /* ─── ACCURACY RING ─── */
@@ -250,44 +396,187 @@
         .mbi-val { font-family: 'Outfit', sans-serif; font-size: 1.4rem; font-weight: 800; }
         .mbi-lbl { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
 
-        /* ─── ACTIVITY FEED ─── */
-        .activity-feed { overflow-y: auto; max-height: 320px; display: flex; flex-direction: column; gap: 0.6rem; }
+        /* ─── COVERAGE & ACTIVITY PANELS ─── */
+        .coverage-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.6rem;
+        }
+
+        .cov-item {
+            text-align: center;
+            padding: 0.85rem 0.5rem;
+            background: var(--bg);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .cov-item:hover {
+            border-color: var(--border-accent);
+            background: rgba(232, 119, 34, 0.03);
+            cursor: pointer;
+        }
+
+        .cov-val {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 0.2rem;
+            color: var(--saffron);
+        }
+
+        .cov-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .lang-section {
+            margin-top: 1rem;
+            padding: 1rem 1.1rem;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+        }
+
+        .lang-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .lang-chips-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 0.6rem;
+        }
+
+        .lang-chip {
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 12px;
+            background: rgba(232, 119, 34, 0.07);
+            color: var(--saffron-dark);
+            border: 1px solid rgba(232, 119, 34, 0.18);
+            cursor: pointer;
+        }
+
+        .coverage-banner {
+            margin-top: 1rem;
+            padding: 0.9rem 1.1rem;
+            background: rgba(232, 119, 34, 0.05);
+            border: 1px solid rgba(232, 119, 34, 0.15);
+            border-radius: 12px;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            line-height: 1.55;
+        }
+
+        /* ─── LIVE ACTIVITY FEED ─── */
+        .feed-count-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--saffron-dark);
+            background: rgba(232, 119, 34, 0.08);
+            border: 1px solid rgba(232, 119, 34, 0.2);
+            padding: 3px 10px;
+            border-radius: 16px;
+            white-space: nowrap;
+        }
+
+        .activity-feed {
+            overflow-y: auto;
+            max-height: 340px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            padding-right: 2px;
+        }
         .activity-feed::-webkit-scrollbar { width: 4px; }
-        .activity-feed::-webkit-scrollbar-track { background: var(--bg); }
+        .activity-feed::-webkit-scrollbar-track { background: var(--bg); border-radius: 2px; }
         .activity-feed::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-        .activity-item { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem; border-radius: var(--radius-sm); background: var(--bg); border: 1px solid var(--border); transition: all 0.2s; }
-        .activity-item:hover { border-color: var(--border-accent); background: rgba(232,119,34,0.02); }
-        .activity-dot { font-size: 1.1rem; flex-shrink: 0; }
+
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem 0.9rem;
+            border-radius: 10px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .activity-item:hover {
+            border-color: var(--border-accent);
+            background: rgba(232, 119, 34, 0.02);
+            cursor: pointer;
+        }
+
+        .activity-dot {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
         .activity-info { flex: 1; min-width: 0; }
-        .activity-title { font-size: 0.83rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .activity-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 3px; font-size: 0.72rem; color: var(--text-muted); }
-        .activity-tag { font-weight: 700; padding: 1px 6px; border-radius: 4px; font-size: 0.65rem; }
-        .activity-tag.fake { background: rgba(220,38,38,0.1); color: var(--red); }
-        .activity-tag.real { background: rgba(19,136,8,0.1); color: var(--green); }
-        .activity-tag.uncertain { background: rgba(217,119,6,0.1); color: var(--amber); }
-        .feed-count { font-size: 0.78rem; color: var(--text-muted); }
 
-        /* ─── COVERAGE ─── */
-        .coverage-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; }
-        .cov-item { text-align: center; padding: 1rem; background: var(--bg); border-radius: var(--radius-sm); border: 1px solid var(--border); }
-        .cov-val { font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 900; color: var(--saffron); }
-        .cov-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+        .activity-title {
+            font-size: 0.83rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-        /* ─── HEALTH METRICS ─── */
-        .metric-row { display: flex; align-items: center; justify-content: space-between; padding: 0.7rem 0; border-bottom: 1px solid var(--border); }
-        .metric-row:last-child { border-bottom: none; }
-        .metric-name { font-size: 0.85rem; color: var(--text-secondary); }
-        .metric-badge { font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 10px; }
-        .metric-badge.green { background: rgba(19,136,8,0.1); color: var(--green); }
-        .metric-badge.amber { background: rgba(217,119,6,0.1); color: var(--amber); }
-        .metric-badge.red { background: rgba(220,38,38,0.1); color: var(--red); }
+        .activity-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 4px;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
 
-        /* ─── MAP LINK ─── */
-        .map-link { display: inline-flex; align-items: center; gap: 6px; background: var(--saffron); color: #fff; font-size: 0.82rem; font-weight: 600; padding: 6px 14px; border-radius: var(--radius-sm); text-decoration: none; transition: all 0.2s; }
-        .map-link:hover { background: var(--saffron-dark); }
+        .activity-tag {
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+        }
+        .activity-tag.fake      { background: rgba(220, 38, 38, 0.1); color: var(--red); }
+        .activity-tag.real      { background: rgba(19, 136, 8, 0.1); color: var(--green); }
+        .activity-tag.uncertain { background: rgba(217, 119, 6, 0.1); color: var(--amber); }
 
-        .empty-feed { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.88rem; }
-        .empty-icon { font-size: 2rem; margin-bottom: 8px; }
+        .map-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--saffron);
+            color: #fff;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .map-link:hover {
+            background: var(--saffron-dark);
+        }
+
+        .empty-feed { text-align: center; padding: 3rem 1rem; color: var(--text-muted); font-size: 0.9rem; }
+        .empty-icon { font-size: 2.4rem; margin-bottom: 8px; }
 
         /* Enhanced Mobile Responsiveness */
         @media (max-width: 1200px) {
@@ -367,11 +656,22 @@
     <div data-navbar></div>
 
     <div class="main">
-        <!-- Header -->
-        <div class="page-header">
-            <div class="page-title" style="padding-top: 60px;">Real-Time Analytics</div>
-            <div class="page-sub">Comprehensive misinformation detection metrics across India</div>
-            <div class="last-updated" id="last-updated">Fetching data…</div>
+        <!-- Header Banner Card -->
+        <div class="header-banner-card">
+            <div>
+                <div class="header-tag">📊 Live Analytics Dashboard</div>
+                <h1 class="header-title">Real-Time Intelligence</h1>
+                <p class="header-sub">Comprehensive misinformation detection &amp; verified media analytics across India</p>
+            </div>
+            <div class="header-right">
+                <div class="last-updated-badge" id="last-updated">Fetching data…</div>
+                <button type="button" class="header-refresh-btn" id="manual-refresh-btn" onclick="triggerManualRefresh()">
+                    <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Refresh Data
+                </button>
+            </div>
         </div>
 
         <!-- Stat Cards -->
@@ -416,14 +716,13 @@
 
         <!-- Row: Coverage + Live Activity -->
         <div class="row row-2">
-            <!-- Geographic Coverage -->
+            <!-- Geographic Coverage (Dedicated Spatial Content) -->
             <div class="panel">
                 <div class="panel-header">
                     <div>
-                        <div class="panel-title">Geographic Coverage</div>
-                        <div class="panel-sub">Monitoring across all Indian states and union territories</div>
+                        <div class="panel-title">Geographic Coverage &amp; Spatial Reach</div>
+                        <div class="panel-sub">Continuous monitoring across all Indian states, UTs &amp; regional media</div>
                     </div>
-                    <a href="/map/enhanced-india-heatmap.html" class="map-link">🗺️ Map</a>
                 </div>
                 <div class="panel-body">
                     <div class="coverage-grid">
@@ -436,12 +735,34 @@
                             <div class="cov-label">News Sources</div>
                         </div>
                         <div class="cov-item">
-                            <div class="cov-val">100+</div>
-                            <div class="cov-label">Articles/Second</div>
+                            <div class="cov-val">20+</div>
+                            <div class="cov-label">Languages</div>
+                        </div>
+                        <div class="cov-item">
+                            <div class="cov-val">200+</div>
+                            <div class="cov-label">Districts Mapped</div>
                         </div>
                     </div>
-                    <div style="margin-top:1.25rem; padding:1rem; background:rgba(232,119,34,0.05); border:1px solid rgba(232,119,34,0.15); border-radius:12px; font-size:0.85rem; color:var(--text-secondary); line-height:1.6;">
-                        🌐 Monitoring <strong style="color:var(--saffron)">all 28 states + 8 union territories</strong> with concurrent RSS ingestion, processed through our 5-model ML ensemble, IndicBERT NLP pipeline, and GDELT global news index.
+
+                    <div class="lang-section">
+                        <div class="lang-title">
+                            <span>🌐 Supported Indian Languages</span>
+                        </div>
+                        <div class="lang-chips-grid">
+                            <span class="lang-chip">Hindi (हिन्दी)</span>
+                            <span class="lang-chip">Tamil (தமிழ்)</span>
+                            <span class="lang-chip">Telugu (తెలుగు)</span>
+                            <span class="lang-chip">Bengali (বাংলা)</span>
+                            <span class="lang-chip">Marathi (मराठी)</span>
+                            <span class="lang-chip">Gujarati (ગુજરાતી)</span>
+                            <span class="lang-chip">Kannada (ಕನ್ನಡ)</span>
+                            <span class="lang-chip">Malayalam (മലയാളം)</span>
+                            <span class="lang-chip">Punjabi (ਪੰਜਾਬੀ)</span>
+                        </div>
+                    </div>
+
+                    <div class="coverage-banner">
+                        📍 Real-time geocoding extracts entity mentions across <strong>200+ Indian districts</strong> and maps events directly to all 28 states + 8 UTs via 2-minute RSS feed sync &amp; GDELT global news streams.
                     </div>
                 </div>
             </div>
@@ -453,7 +774,7 @@
                         <div class="panel-title">Live Activity</div>
                         <div class="panel-sub">Recent classifications</div>
                     </div>
-                    <span class="feed-count" id="events-count">Loading…</span>
+                    <span class="feed-count-badge" id="events-count">Loading…</span>
                 </div>
                 <div class="panel-body" style="overflow:hidden; padding:1rem;">
                     <div class="activity-feed" id="activity-feed">
@@ -589,6 +910,15 @@
 
         function refreshAll() { updateStats(); updateActivity(); }
 
+        window.triggerManualRefresh = function() {
+            const btn = document.getElementById('manual-refresh-btn');
+            if (btn) {
+                btn.classList.add('spinning');
+                setTimeout(() => btn.classList.remove('spinning'), 800);
+            }
+            refreshAll();
+        };
+
         // Initial load
         updateStats();
         updateActivity();
@@ -599,8 +929,8 @@
         sse.addEventListener('live_events', e => updateActivity(JSON.parse(e.data)));
         sse.onerror = () => { document.getElementById('system-status').textContent = 'Reconnecting…'; };
 
-        // Fallback polling every 15s in case SSE stalls
-        setInterval(refreshAll, 15000);
+        // Increased fallback polling interval (every 2 minutes / 120s) to reduce background auto-refresh noise
+        setInterval(refreshAll, 120000);
     </script>
 </body>
 </html>
